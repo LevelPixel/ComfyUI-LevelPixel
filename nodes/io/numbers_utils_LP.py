@@ -4,9 +4,9 @@ class FloatSlider:
         return {"required": {
                     "number":("FLOAT", {
                         "default": 0, 
-                        "min": 0.0001,
-                        "max": 1.0000,
-                        "step": 0.0001, 
+                        "min": 0.000000,
+                        "max": 1.000000,
+                        "step": 0.000001, 
                         "display": "slider"
                     }),
                 },
@@ -22,10 +22,10 @@ class FloatSlider:
     OUTPUT_IS_LIST = (False,)
 
     def run(self, number):
-        if number < 0.0001:
-            number = 0.0001
-        elif number > 1.0000:
-            number = 1.0000
+        if number < 0.000000:
+            number = 0.000000
+        elif number > 1.000000:
+            number = 1.000000
         return (number,)
     
 NODE_CLASS_MAPPINGS = {
