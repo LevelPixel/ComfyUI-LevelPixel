@@ -172,21 +172,31 @@
       defend, and hold each Contributor harmless for any liability
       incurred by, or claims asserted against, such Contributor by reason
       of your accepting any such warranty or additional liability.
+      
+   10. Additional information and licenses (but not excluding all of 
+      the above):
+      The developers and contributors to this product and repository 
+      do not bear any responsibility for any damage or loss of your data, 
+      valuables, passwords, accounts and any other things that could be 
+      damaged, distorted, damaged, lost, stolen due to the use of this 
+      software and information files. The developers and contributors 
+      to this product do not bear any responsibility for the violation 
+      of your privacy and anonymity.
+      Use the code, scripts and programs from this repository at your 
+      own risk, all responsibility for the use and launch of the program 
+      code is entirely yours.
+      Level Pixel has no malicious intent in developing its products, 
+      any problems and violations that you experience are either your 
+      fault or the fault of third parties (the owners of those software 
+      packages that you automatically download along with this product 
+      and program code). Level Pixel does not sell this code, and the 
+      original materials on which these files and program code were 
+      created belong to their rightful owners, as indicated in their 
+      licenses.
 
    END OF TERMS AND CONDITIONS
 
-   APPENDIX: How to apply the Apache License to your work.
-
-      To apply the Apache License to your work, attach the following
-      boilerplate notice, with the fields enclosed by brackets "[]"
-      replaced with your own identifying information. (Don't include
-      the brackets!)  The text should be enclosed in the appropriate
-      comment syntax for the file format. We also recommend that a
-      file or class name and description of purpose be included on the
-      same "printed page" as the copyright notice for easier
-      identification within third-party archives.
-
-   Copyright [yyyy] [name of copyright owner]
+   Copyright Level Pixel
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.

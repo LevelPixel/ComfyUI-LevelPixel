@@ -1,0 +1,15 @@
+[project]
+name = "comfyui_level_pixel"
+description = "Various nodes of the Level Pixel company. Includes convenient advanced nodes for working with images from folders; counting files in a folder; cleaning memory; tag filters. Model Unloader, LLM Unloader (GGUF unloaders), Free memory, Tag Filters, Tag Category Filters, Tag Choice Parser, File counter, Image Loader From Path (with counters)."
+version = "1.0.5"
+license = { file = "LICENSE" }
+dependencies = ["torch>=2.0.1", "torchvision>=0.15.2", "numpy", "matplotlib"]
+
+[project.urls]
+Repository = "https://github.com/LevelPixel/ComfyUI-LevelPixel"
+
+[tool.comfy]
+PublisherId = "Level Pixel"
+DisplayName = "ComfyUI_LevelPixel"
+Icon = ""
+Models = [{location = "/checkpoints/model.safetensor", model_url = "https://example.com/model.zip"}]
