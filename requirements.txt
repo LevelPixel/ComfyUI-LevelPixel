@@ -4,3 +4,6 @@ pillow>=9.4.0
 numpy
 matplotlib
 scikit-build-core>=0.10.7
+rembg>=2.0.59
+onnxruntime-gpu>=1.18.0
+onnxruntime>=1.20.0
