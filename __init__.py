@@ -2,18 +2,7 @@ import os
 import pkg_resources
 import sys
 import subprocess
-import folder_paths
 import importlib
-
-supported_LLava_extensions = set(['.gguf'])
-
-try:
-    folder_paths.folder_names_and_paths["LLavacheckpoints"] = (folder_paths.folder_names_and_paths["LLavacheckpoints"][0], supported_LLava_extensions)
-except:
-    if not os.path.isdir(os.path.join(folder_paths.models_dir, "LLavacheckpoints")):
-        os.mkdir(os.path.join(folder_paths.models_dir, "LLavacheckpoints"))
-        
-    folder_paths.folder_names_and_paths["LLavacheckpoints"] = ([os.path.join(folder_paths.models_dir, "LLavacheckpoints")], supported_LLava_extensions)
 
 def check_requirements_installed(requirements_path):
     with open(requirements_path, 'r') as f:
@@ -48,12 +37,14 @@ node_list = [
     "io.numbers_utils_LP",
     "io.folder_workers_LP",
     "io.image_loaders_LP",
-    "io.text_utils_LP",
+    "io.image_outputs_LP",
+    "io.text_outputs_LP",
     "llm.llm_LP",
     "tags.tags_utils_LP",
     "text.text_utils_LP",
     "unloaders.model_unloaders_LP",
     "vlm.llava_LP",
+    "vlm.autotagger_LP"
 ]
 
 NODE_CLASS_MAPPINGS = {}

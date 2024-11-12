@@ -37,7 +37,7 @@ class LLavaLoader:
     RETURN_NAMES = ("model",)
     FUNCTION = "load_llava_checkpoint"
 
-    CATEGORY = "LevelPixel/LLava"
+    CATEGORY = "LevelPixel/VLM"
     def load_llava_checkpoint(self, ckpt_name, max_ctx, gpu_layers, n_threads, clip ):
         ckpt_path = folder_paths.get_full_path("LLavacheckpoints", ckpt_name)
         llm = Llama(model_path = ckpt_path, chat_handler=clip,offload_kqv=True, f16_kv=True, 
@@ -59,7 +59,7 @@ class LLavaClipLoader:
     RETURN_NAMES = ("clip", )
     FUNCTION = "load_clip_checkpoint"
 
-    CATEGORY = "LevelPixel/LLava"
+    CATEGORY = "LevelPixel/VLM"
     def load_clip_checkpoint(self, clip_name):
         clip_path = folder_paths.get_full_path("LLavacheckpoints", clip_name)
         clip = Llava16ChatHandler(clip_model_path = clip_path, verbose=False)        
@@ -82,7 +82,7 @@ class LLavaSamplerSimple:
 
     RETURN_TYPES = ("STRING",)
     FUNCTION = "generate_text_simple"
-    CATEGORY = "LevelPixel/LLava"
+    CATEGORY = "LevelPixel/VLM"
 
     def generate_text_simple(self, image, prompt, model, temperature):
 
@@ -138,7 +138,7 @@ class LLavaSamplerAdvanced:
 
     RETURN_TYPES = ("STRING",)
     FUNCTION = "generate_text_advanced"
-    CATEGORY = "LevelPixel/LLava"
+    CATEGORY = "LevelPixel/VLM"
 
     def generate_text_advanced(self, image, system_msg, prompt, model, max_tokens, temperature, top_p, 
                                frequency_penalty, presence_penalty, repeat_penalty, top_k,seed):
@@ -201,7 +201,7 @@ class LLavaSimple:
 
     RETURN_TYPES = ("STRING",)
     FUNCTION = "generate_text_full_simple"
-    CATEGORY = "LevelPixel/LLava"
+    CATEGORY = "LevelPixel/VLM"
 
     def generate_text_full_simple(self, ckpt_name, clip_name, max_ctx, gpu_layers, n_threads, image, prompt, temperature, unload):
 
@@ -285,7 +285,7 @@ class LLavaAdvanced:
 
     RETURN_TYPES = ("STRING",)
     FUNCTION = "generate_text_full_advanced"
-    CATEGORY = "LevelPixel/LLava"
+    CATEGORY = "LevelPixel/VLM"
 
     def generate_text_full_advanced(self, ckpt_name, clip_name, max_ctx, gpu_layers, n_threads, image, 
                                     system_msg, prompt, max_tokens, temperature, top_p, top_k, frequency_penalty, 

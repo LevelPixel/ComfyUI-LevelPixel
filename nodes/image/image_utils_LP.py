@@ -159,7 +159,7 @@ class ImageRemoveBackground:
 
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "remove_background"
-    CATEGORY = "image"
+    CATEGORY = "LevelPixel/Image"
 
     def remove_background(self, image, model_name):
         session = new_session(model_name)
