@@ -39,6 +39,7 @@ node_list = [
     "io.image_loaders_LP",
     "io.image_outputs_LP",
     "io.text_outputs_LP",
+    "io.lora_tag_loader_LP",
     "llm.llm_LP",
     "tags.tags_utils_LP",
     "text.text_utils_LP",

@@ -38,7 +38,7 @@ It will attempt to use symlinks and junctions to prevent having to copy files an
 
 All nodes Level Pixel:
 
-<img width="1173" alt="level-pixel-nodes" src="https://github.com/user-attachments/assets/60623f84-b02a-4749-9e2c-4ab60431b383">
+<img width="1171" alt="level-pixel-nodes_2" src="https://github.com/user-attachments/assets/63b42605-1720-4a10-a54d-d2950d3d013f">
 
 ## LLM nodes
 
@@ -60,6 +60,14 @@ The core functionality is taken from [ComfyUI_VLM_nodes](https://github.com/goka
 
 A more improved version of rembg nodes for ComfyUI with an extended list of models.
 
+To use on GPU, at least CUDA 12.4 (Pytorch cu124) is required, so I recommend upgrading to newer versions of ComfyUI and Pytorch.
+If GPU still doesn't work, run:
+
+```
+pip uninstall rembg
+pip install rembg[gpu]
+```
+
 The core functionality is taken from [RemBG nodes for ComfyUI](https://github.com/Loewen-Hob/rembg-comfyui-node-better) and belongs to its authors.
 
 ## Autotagger
@@ -77,6 +85,12 @@ A set of nodes that allow you to filter tags by category. There is an option to 
 Nodes are very convenient because you can use them to remove unnecessary tags by certain categories, for example, to clean up tags and prepare them for use. You can use this to get certain prompts from an image (for example, if you need a description of only the background from an image - you can get this category of tags if you set the "background" category in Tag Category Keeper).
 
 The core functionality is taken from [comfyui_tag_fillter](https://github.com/sugarkwork/comfyui_tag_fillter) and belongs to its authors.
+
+## Load LoRA Tag
+
+LoRA loader from text in the style of Automatic1111 and Forge WebUI. For this version of loader, text output for errors when loading LoRA has been added as widget on node.
+
+The core functionality is taken from [comfyui_lora_tag_loader](https://github.com/badjeff/comfyui_lora_tag_loader) and belongs to its authors.
 
 ## Model Unloader nodes
 
@@ -121,12 +135,14 @@ VLM nodes for ComfyUI/[ComfyUI_VLM_nodes](https://github.com/gokayfem/ComfyUI_VL
 
 Tag Filter nodes for ComfyUI/[comfyui_tag_fillter](https://github.com/sugarkwork/comfyui_tag_fillter) - Best tag filter by category nodes for ComfyUI.
 
+Load LoRA Tag node for ComfyUI/[comfyui_lora_tag_loader](https://github.com/badjeff/comfyui_lora_tag_loader) - Thanks to the author for this great node for LoRAs!
+
 RemBG nodes for ComfyUI/[rembg-comfyui-node](https://github.com/Loewen-Hob/rembg-comfyui-node-better) - RemBG nodes for ComfyUI.
 
 RemBG software package/[rembg](https://github.com/danielgatis/rembg) - Best software to remove background for any object in the picture.
 
 # License
 
-Copyright (c) 2024-present Level Pixel
+Copyright (c) 2024-present [Level Pixel](https://github.com/LevelPixel)
 
 Licensed under Apache License

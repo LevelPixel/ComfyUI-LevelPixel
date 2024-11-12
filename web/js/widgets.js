@@ -80,7 +80,7 @@ app.registerExtension({
 	async beforeRegisterNodeDef(nodeType, nodeData, app) {
 		levelpixel.addStatusTagHandler(nodeType);
 
-		if (nodeData.name === "Autotagger|LevelPixel") {
+		if (nodeData.name === "Autotagger|LP") {
 			const onExecuted = nodeType.prototype.onExecuted;
 			nodeType.prototype.onExecuted = function (message) {
 				const r = onExecuted?.apply?.(this, arguments);
@@ -128,6 +128,72 @@ app.registerExtension({
 						callback: async () => {
 							let src = img.src;
 							src = src.replace("/view?", `/levelpixel/autotagger/tag?node=${this.id}&clientId=${api.clientId}&`);
+							const res = await (await fetch(src)).json();
+							alert(res);
+						},
+					});
+				}
+
+				return r;
+			};
+		}
+	},
+});
+
+
+app.registerExtension({
+	name: "levelpixel.LoraTagLoader",
+	async beforeRegisterNodeDef(nodeType, nodeData, app) {
+		levelpixel.addStatusTagHandler(nodeType);
+
+		if (nodeData.name === "LoraTagLoader|LP") {
+			const onExecuted = nodeType.prototype.onExecuted;
+			nodeType.prototype.onExecuted = function (message) {
+				const r = onExecuted?.apply?.(this, arguments);
+
+				const pos = this.widgets.findIndex((w) => w.name === "log");
+				if (pos !== -1) {
+					for (let i = pos; i < this.widgets.length; i++) {
+						this.widgets[i].onRemove?.();
+					}
+					this.widgets.length = pos;
+				}
+
+				for (const list of message.log) {
+					const w = ComfyWidgets["STRING"](this, "log", ["STRING", { multiline: true }], app).widget;
+					w.inputEl.readOnly = true;
+					w.inputEl.style.opacity = 0.6;
+					w.value = list;
+				}
+
+				this.onResize?.(this.size);
+
+				return r;
+			};
+		} else {
+			const getExtraMenuOptions = nodeType.prototype.getExtraMenuOptions;
+			nodeType.prototype.getExtraMenuOptions = function (_, options) {
+				const r = getExtraMenuOptions?.apply?.(this, arguments);
+				let img;
+				if (this.imageIndex != null) {
+					// An image is selected so select that
+					img = this.imgs[this.imageIndex];
+				} else if (this.overIndex != null) {
+					// No image is selected but one is hovered
+					img = this.imgs[this.overIndex];
+				}
+				if (img) {
+					let pos = options.findIndex((o) => o.content === "Save Image");
+					if (pos === -1) {
+						pos = 0;
+					} else {
+						pos++;
+					}
+					options.splice(pos, 0, {
+						content: "LoraTagLoader",
+						callback: async () => {
+							let src = img.src;
+							src = src.replace("/view?", `/levelpixel/loratagloader/tag?node=${this.id}&clientId=${api.clientId}&`);
 							const res = await (await fetch(src)).json();
 							alert(res);
 						},
