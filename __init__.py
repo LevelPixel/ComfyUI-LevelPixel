@@ -33,19 +33,21 @@ check_requirements_installed(llama_cpp_agent_path)
 init()
 
 node_list = [
+    "convert.convert_LP",
     "image.image_utils_LP",
-    "io.numbers_utils_LP",
     "io.folder_workers_LP",
     "io.image_loaders_LP",
     "io.image_outputs_LP",
-    "io.text_outputs_LP",
     "io.lora_tag_loader_LP",
+    "io.numbers_utils_LP",
+    "io.text_inputs_LP",
+    "io.text_outputs_LP",
     "llm.llm_LP",
     "tags.tags_utils_LP",
     "text.text_utils_LP",
     "unloaders.model_unloaders_LP",
+    "vlm.autotagger_LP",
     "vlm.llava_LP",
-    "vlm.autotagger_LP"
 ]
 
 NODE_CLASS_MAPPINGS = {}

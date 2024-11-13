@@ -2,9 +2,12 @@
 
 ![banner_LevelPixel_with_logo](https://github.com/user-attachments/assets/ef79f2c9-04fb-485f-aba5-6cd00cb14d8c)
 
-In this Level Pixel node pack you will find:
+The purpose of this package is to collect the most necessary and atomic nodes for working with any tasks, adapted for use in cycles and conditions. The package of nodes is aimed at those users who need all the basic things to create multitasking complex workflows using multimodal neural models and software solutions.
 
-LLM nodes, LLaVa nodes, Image Remove Background based on RemBG, Tag Category Filter nodes, Model Unloader nodes, Autotagger, File Counter, Image Loader From Path, Load Image, Fast Checker Pattern, Simple Float Slider.
+*Our dream is to see object-oriented programming in ComfyUI. We will try to get closer to it.*
+
+**In this Level Pixel node pack you will find:**
+LLM nodes, LLaVa and other VLM nodes, Image Remove Background based on RemBG, Tag Category Filter nodes, Model Unloader nodes, Autotagger, File Counter, Image Loader From Path, Load Image, Fast Checker Pattern, Float Slider, Load LoRA Tag, Image Overlay, Conversion nodes.
 
 ## Contacts:
 
@@ -61,7 +64,7 @@ The core functionality is taken from [ComfyUI_VLM_nodes](https://github.com/goka
 A more improved version of rembg nodes for ComfyUI with an extended list of models.
 
 To use on GPU, at least CUDA 12.4 (Pytorch cu124) is required, so I recommend upgrading to newer versions of ComfyUI and Pytorch.
-If GPU still doesn't work, run:
+If GPU still doesn't work, use for your python:
 
 ```
 pip uninstall rembg
@@ -108,6 +111,12 @@ Loads images from a specific folder or path. It is convenient because you can sp
 
 This is a new image loading node that can retrieve the name of the files you load into your workflow.
 
+## Image Overlay
+
+A node that allows you to overlay one image on another with the ability to specify a mask. In this package, Image Overlay has an extended range of specified sizes for the final image, and also has another standard image size.
+
+The core functionality is taken from [efficiency-nodes-comfyui](https://github.com/jags111/efficiency-nodes-comfyui) and belongs to its authors.
+
 ## Fast Checker Pattern
 
 Quickly creates a background image with a checkerboard pattern according to the specified parameters for subsequent testing of images with a transparent background. You need to combine the resulting background image with your image with a transparent background in other ComfyUI nodes (at the moment there is no universal node, but perhaps we will make one in the future).
@@ -126,6 +135,9 @@ There are a few more nodes in this package that have some unusual uses:
 * Preview Image Bridge - only output an image to the screen if there is a connection to the output node. Useful in loops and conditions where the execution of this node is not required due to current conditions (variables).
 * Show Text Bridge - only output text to the screen if there is a connection to the output node. Useful in loops and conditions where the execution of this node is not required due to current conditions (variables).
 * Show Text - output text to the screen with mandatory execution. The node is executed in any case, whether the output is connected or not.
+* Text - a simple node for entering multi-line text (similar to Prompt from other node packages).
+* String - a simple node for entering single-line text (similar to String from other node packages).
+* Conversion nodes - a variety of different nodes that allow you to transform different types of variables into other variables. The big difference from other current node packages is that they cover a larger number of variable types. Conversion nodes: StringToFloat, StringToInt, StringToBool, StringToNumber, StringToCombo, IntToString, FloatToString, BoolToString, FloatToInt, IntToFloat, IntToBool, BoolToInt.
 
 # Credits
 
@@ -136,6 +148,8 @@ VLM nodes for ComfyUI/[ComfyUI_VLM_nodes](https://github.com/gokayfem/ComfyUI_VL
 Tag Filter nodes for ComfyUI/[comfyui_tag_fillter](https://github.com/sugarkwork/comfyui_tag_fillter) - Best tag filter by category nodes for ComfyUI.
 
 Load LoRA Tag node for ComfyUI/[comfyui_lora_tag_loader](https://github.com/badjeff/comfyui_lora_tag_loader) - Thanks to the author for this great node for LoRAs!
+
+Efficiency-nodes-comfyui/[efficiency-nodes-comfyui](https://github.com/jags111/efficiency-nodes-comfyui) - Thanks for Image Overlay!
 
 RemBG nodes for ComfyUI/[rembg-comfyui-node](https://github.com/Loewen-Hob/rembg-comfyui-node-better) - RemBG nodes for ComfyUI.
 
