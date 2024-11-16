@@ -46,8 +46,8 @@ COLORS = ["custom", "white", "black", "red", "green", "blue", "yellow",
           "violet", "coral", "indigo"]
 
 model_list = [
-'birefnet-massive', # BEST! Recommended! A pre-trained model with massive dataset. Source - https://github.com/ZhengPeng7/BiRefNet
-'birefnet-general', # A pre-trained model for general use cases. Source - https://github.com/ZhengPeng7/BiRefNet
+'birefnet-general', # BEST! Recommended! A pre-trained model for general use cases. Source - https://github.com/ZhengPeng7/BiRefNet
+'birefnet-massive', # A pre-trained model with massive dataset Source - https://github.com/ZhengPeng7/BiRefNet
 'birefnet-general-lite', # A light pre-trained model for general use cases. Source - https://github.com/ZhengPeng7/BiRefNet
 'birefnet-portrait', # A pre-trained model for human portraits. Source - https://github.com/ZhengPeng7/BiRefNet
 'birefnet-dis', # A pre-trained model for dichotomous image segmentation (DIS). Source - https://github.com/ZhengPeng7/BiRefNet
