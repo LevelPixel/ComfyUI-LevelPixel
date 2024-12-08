@@ -83,16 +83,16 @@ class TextTranslate:
     FUNCTION = "text_translate"
     CATEGORY = "LevelPixel/Text"
 
-    def text_translate(self, prompt):
-        if prompt.strip():
-            detected_lang = detect(prompt)
+    def text_translate(self, text):
+        if text.strip():
+            detected_lang = detect(text)
             if detected_lang != 'en':
                 try:
                     translator = GoogleTranslator(source='auto', target='en')
-                    prompt = translator.translate(prompt)
+                    text = translator.translate(text)
                 except Exception as e:
                     print(f"Translation error: {e}")
-        return (prompt,)
+        return (text,)
 
 NODE_CLASS_MAPPINGS = {
     "TextChoiceParser|LP": TextChoiceParser,
