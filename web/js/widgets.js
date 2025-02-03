@@ -205,3 +205,37 @@ app.registerExtension({
 		}
 	},
 });
+
+
+app.registerExtension({
+	name: "levelpixel.FindValueFromFile",
+	async beforeRegisterNodeDef(nodeType, nodeData, app) {
+		levelpixel.addStatusTagHandler(nodeType);
+
+		if (nodeData.name === "FindValueFromFile|LP") {
+			const onExecuted = nodeType.prototype.onExecuted;
+			nodeType.prototype.onExecuted = function (message) {
+				const r = onExecuted?.apply?.(this, arguments);
+
+				const pos = this.widgets.findIndex((w) => w.name === "log");
+				if (pos !== -1) {
+					for (let i = pos; i < this.widgets.length; i++) {
+						this.widgets[i].onRemove?.();
+					}
+					this.widgets.length = pos;
+				}
+
+				for (const list of message.log) {
+					const w = ComfyWidgets["STRING"](this, "log", ["STRING", { multiline: true }], app).widget;
+					w.inputEl.readOnly = true;
+					w.inputEl.style.opacity = 0.6;
+					w.value = list;
+				}
+
+				this.onResize?.(this.size);
+
+				return r;
+			};
+		}
+	},
+});
