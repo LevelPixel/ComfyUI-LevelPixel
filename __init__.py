@@ -48,6 +48,7 @@ node_list = [
     "unloaders.model_unloaders_LP",
     "vlm.autotagger_LP",
     "vlm.llava_LP",
+    "utils.utils_LP",
 ]
 
 NODE_CLASS_MAPPINGS = {}
