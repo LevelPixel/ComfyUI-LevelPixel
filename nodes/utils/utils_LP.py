@@ -23,7 +23,7 @@ class Delay:
     RETURN_TYPES = (any,)
     RETURN_NAMES = ("output",)
     FUNCTION = "add_delay"
-    CATEGORY = "LevelPixel/Unloaders"
+    CATEGORY = "LevelPixel/Utils"
     
     def add_delay(self, input, delay_seconds):
         delay_text = f"{delay_seconds:.1f} second{'s' if delay_seconds != 1 else ''}"
