@@ -436,6 +436,9 @@ def update_scores(scores, text, base, bonus_first, bonus_4_10, include_new=True)
         else:
             points = base
 
+        if len(tag.split()) == 1:
+            points += 1
+
         if tag in scores:
             scores[tag] += points
         else:
