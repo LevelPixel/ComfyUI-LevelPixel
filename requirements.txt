@@ -11,3 +11,4 @@ googletrans
 langdetect
 httpcore
 deep_translator
+wordninja

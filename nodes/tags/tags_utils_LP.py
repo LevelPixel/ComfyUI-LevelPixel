@@ -1,7 +1,10 @@
 import os
 import json
+import string
+import re
 
 tag_category = json.load(open(os.path.join(os.path.dirname(os.path.realpath(__file__)),"tag_category.json")))
+banned_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),"banned_tags.txt")
 
 def category_for_tags(tags):
     tags = [tag.strip() for tag in tags.replace(".", ",").replace("\n", ",").split(",")]
@@ -419,6 +422,223 @@ class TagCategory:
                         break
 
         return (", ".join(result),)
+    
+def parse_tags(text):
+    return [tag.strip() for tag in text.split(",") if tag.strip() != ""]
+
+def update_scores(scores, text, base, bonus_first, bonus_4_10, include_new=True):
+    tags = parse_tags(text)
+    for i, tag in enumerate(tags):
+        if i < 3:
+            points = base + bonus_first
+        elif i < 10:
+            points = base + bonus_4_10
+        else:
+            points = base
+
+        if tag in scores:
+            scores[tag] += points
+        else:
+            if include_new:
+                scores[tag] = points
+
+class ResortingTags:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "priority_texts": ("LIST", {"forceInput": True}),
+                "inclusive_texts": ("LIST", {"forceInput": True}),
+                "auxiliary_texts": ("LIST", {"forceInput": True}),
+            }
+        }
+
+    RETURN_TYPES = ("STRING", "STRING",)
+    RETURN_NAMES = ("tags TEXT", "tags_with_rating TEXT",)
+
+    FUNCTION = "resorting_tags"
+
+    CATEGORY = "LevelPixel/Tags"
+
+    def resorting_tags(self, priority_texts, inclusive_texts, auxiliary_texts):
+        scores = {}
+        for text in priority_texts:
+            update_scores(scores, text, base=3, bonus_first=2, bonus_4_10=1, include_new=True)
+
+        for text in inclusive_texts:
+            update_scores(scores, text, base=2, bonus_first=2, bonus_4_10=1, include_new=True)
+
+        for text in auxiliary_texts:
+            update_scores(scores, text, base=1, bonus_first=1, bonus_4_10=0, include_new=False)
+
+        sorted_tags = sorted(scores.items(), key=lambda item: (-item[1], item[0]))
+        result = ", ".join(tag for tag, _ in sorted_tags)
+        rating_text = ", ".join(f"{tag}:{points}" for tag, points in sorted_tags)
+
+        print("Result tags:")
+        print(result)
+        print("\nRating result tags:")
+        print(rating_text)
+
+        return (result, rating_text,)
+
+class RemoveDuplicateTags:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "text": ("STRING", {"multiline": True, "default": "", "forceInput": True})
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("tags TEXT",)
+
+    FUNCTION = "remove_duplicate_tags"
+
+    CATEGORY = "LevelPixel/Tags"
+    
+    def remove_duplicate_tags(self, text):
+        tags = text.split(',')
+        seen = set()
+        unique_tags = []
+        
+        for tag in tags:
+            tag_clean = tag.strip()
+            if tag_clean and tag_clean not in seen:
+                seen.add(tag_clean)
+                unique_tags.append(tag_clean)
+        
+        result = ", ".join(unique_tags) + ","
+
+        return (result,)
+
+def is_english_core(core: str) -> bool:
+    for ch in core:
+        if ch.isalpha() and ch not in string.ascii_letters:
+            return False
+    return True
+
+class KeepOnlyEnglishTags:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "text": ("STRING", {"multiline": True, "default": "", "forceInput": True})
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("tags TEXT",)
+
+    FUNCTION = "keep_only_english_tags"
+
+    CATEGORY = "LevelPixel/Tags"
+    
+    def keep_only_english_tags(self, text):
+        tags = [tag.strip() for tag in text.split(',') if tag.strip()]
+        
+        filtered_tags = [tag for tag in tags if is_english_core(tag)]
+
+        result = ', '.join(filtered_tags)
+        if text.strip()[-1] == ',':
+            result += ','
+
+        return (result,)
+    
+class RemoveBannedTagsFromTags:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "text": ("STRING", {"multiline": True, "default": "", "forceInput": True})
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("tags TEXT",)
+
+    FUNCTION = "remove_banned_tags_from_tags"
+
+    CATEGORY = "LevelPixel/Tags"
+    
+    def remove_banned_tags_from_tags(self, text):
+        with open(banned_file, "r", encoding="utf-8") as f:
+            banned_tags = {line.strip().lower() for line in f if line.strip()}
+
+        text_lower = text.lower()
+        tokens = text_lower.split(',')
+        wrapper_chars = '\"\'“”‘’()[]{}<>«»'
+
+        kept_tokens = []
+        for token in tokens:
+            token_for_check = token.strip()
+            while token_for_check and token_for_check[0] in wrapper_chars:
+                token_for_check = token_for_check[1:]
+            while token_for_check and token_for_check[-1] in wrapper_chars:
+                token_for_check = token_for_check[:-1]
+
+            if token_for_check in banned_tags:
+                continue
+            else:
+                kept_tokens.append(token)
+
+        result = ",".join(kept_tokens)
+
+        return (result,)
+    
+class RemoveBannedTagsFromText:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "text": ("STRING", {"multiline": True, "default": "", "forceInput": True})
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("tags TEXT",)
+
+    FUNCTION = "remove_banned_tags_from_text"
+
+    CATEGORY = "LevelPixel/Tags"
+    
+    def remove_banned_tags_from_text(self, text):
+        with open(banned_file, "r", encoding="utf-8") as f:
+            banned_tags = [line.strip() for line in f if line.strip()]
+
+        encl_chars = r'\"\'‘’“”«»\(\)\[\]\{\}<>'
+
+        for tag in banned_tags:
+            pattern = re.compile(
+                r'(?<!\w)[' + re.escape(encl_chars) + r']*' + 
+                re.escape(tag.lower()) +
+                r'[' + re.escape(encl_chars) + r']*(?!\w)',
+                re.IGNORECASE
+            )
+            text = pattern.sub("", text)
+        
+        text = re.sub(r'\s+', ' ', text)
+        text = re.sub(r'\s+([,.;?!])', r'\1', text)
+        result = text.strip()
+
+        return (result,)
+
 
 NODE_CLASS_MAPPINGS = {
     "TagCategory|LP": TagCategory,
@@ -429,6 +649,11 @@ NODE_CLASS_MAPPINGS = {
     "TagMerger|LP": TagMerger,
     "TagReplace|LP": TagReplace,
     "TagRemover|LP": TagRemover,
+    "ResortingTags|LP": ResortingTags,
+    "RemoveDuplicateTags|LP": RemoveDuplicateTags,
+    "KeepOnlyEnglishTags|LP": KeepOnlyEnglishTags,
+    "RemoveBannedTagsFromTags|LP": RemoveBannedTagsFromTags,
+    "RemoveBannedTagsFromText|LP": RemoveBannedTagsFromText,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -439,5 +664,10 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "TagSwitcher|LP": "Tag Switcher [LP]",
     "TagMerger|LP": "Tag Merger [LP]",
     "TagReplace|LP": "Tag Replace [LP]",
-    "TagRemover|LP": "Tag Remover [LP]"
+    "TagRemover|LP": "Tag Remover [LP]",
+    "ResortingTags|LP": "Resorting Tags [LP]",
+    "RemoveDuplicateTags|LP": "Remove Duplicate Tags [LP]",
+    "KeepOnlyEnglishTags|LP": "Keep Only English Tags [LP]",
+    "RemoveBannedTagsFromTags|LP": "Remove Banned Tags From Tags [LP]",
+    "RemoveBannedTagsFromText|LP": "Remove Banned Tags From Text [LP]",
 }

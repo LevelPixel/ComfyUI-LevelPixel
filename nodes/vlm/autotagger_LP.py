@@ -1,5 +1,3 @@
-# https://huggingface.co/spaces/SmilingWolf/wd-v1-4-tags
-
 import comfy.utils
 import asyncio
 import aiohttp
