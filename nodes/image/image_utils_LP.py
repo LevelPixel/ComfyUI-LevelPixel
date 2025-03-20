@@ -270,16 +270,124 @@ class ImageOverlay:
         # Return the edited base image
         return (base_image,)
 
+def calculate_scale_factor(width, height, target_size, mode="max"):
+    if mode == "min":
+        base_size = min(width, height)
+    elif mode == "max":
+        base_size = max(width, height)
+    elif mode == "avg":
+        base_size = (width + height) / 2
+    else:
+        raise ValueError("Mode must be 'min', 'max', or 'avg'")
+    
+    scale_factor = target_size / base_size
+    return scale_factor
 
+def target_scale_factor(width, height, target_size=9000):
+    aspect_ratio = width / height if width > height else height / width
+    
+    if 0.9 <= aspect_ratio <= 1.1:
+        mode = "max"
+    elif aspect_ratio > 1.5 or aspect_ratio < 0.67:
+        mode = "avg"
+    else:
+        mode = "max"
+    
+    scale_factor = calculate_scale_factor(width, height, target_size, mode)
+    return scale_factor
+
+def tensor_to_pil(image_tensor):
+    if image_tensor.ndimension() == 4:
+        image_tensor = image_tensor.squeeze(0)
+    if image_tensor.shape[0] in [1, 3]:
+        image_tensor = image_tensor.permute(1, 2, 0)
+    image_tensor = image_tensor.cpu().numpy()
+    image_tensor = (image_tensor * 255).clip(0, 255).astype(np.uint8)
+    return Image.fromarray(image_tensor)
+
+def pil_to_tensor(image):
+    image = np.array(image).astype(np.float32) / 255.0
+    image = torch.tensor(image).permute(2, 0, 1)
+    return image
+
+class ResizeImageToTargetSize:
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+                "resize_method": (["LANCZOS", "BICUBIC", "BILINEAR", "NEAREST"],),
+                "target_size": ([1000, 2000, 9000],),
+            },
+        }
+
+    RETURN_TYPES = ("IMAGE",)
+    FUNCTION = "resize_image_to_target_size"
+    CATEGORY = "LevelPixel/Image"
+    def resize_image_to_target_size(self, image, resize_method='LANCZOS', target_size=1000):
+        size_table = {
+            1000: [(640, 1536), (768, 1344), (832, 1216), (896, 1152), (1024, 1024), (1152, 896), (1216, 832), (1344, 768), (1536, 640)],
+            2000: [(1280, 3072), (1536, 2688), (1664, 2432), (1792, 2304), (2048, 2048), (2304, 1792), (2432, 1664), (2688, 1536), (3072, 1280)],
+            9000: [(5000, 12500), (6000, 10500), (6000, 9000), (7000, 9000), (9000, 9000), (9000, 7000), (9000, 6000), (10500, 6000), (12500, 5000)]
+        }
+
+        interpolation_methods = {
+            'NEAREST': Image.NEAREST,
+            'BILINEAR': Image.BILINEAR,
+            'BICUBIC': Image.BICUBIC,
+            'LANCZOS': Image.LANCZOS
+        }
+
+        img = tensor2pil(image).convert("RGB")
+        width, height = img.size
+
+        scale_factor = target_scale_factor(width, height, target_size)
+        new_width, new_height = int(width * scale_factor), int(height * scale_factor)
+        closest_size = min(size_table[target_size], key=lambda s: abs(s[0] - new_width) + abs(s[1] - new_height))
+
+        aspect_ratio = width / height if width > height else height / width
+    
+        if 0.9 <= aspect_ratio <= 1.1:
+            mode = "max"
+        elif aspect_ratio > 1.5 or aspect_ratio < 0.67:
+            mode = "avg"
+        else:
+            mode = "max"
+
+        if mode == "avg":
+            target_size = (closest_size[0] + closest_size[1]) / 2
+        
+        if target_size > 9000:
+            target_size = 9000
+
+        scale_factor = target_scale_factor(width, height, target_size)
+        new_width, new_height = int(width * scale_factor), int(height * scale_factor)
+
+        while ((new_width < closest_size[0]) | (new_height < closest_size[1])):
+            target_size = target_size + 10
+            scale_factor = target_scale_factor(width, height, target_size)
+            new_width, new_height = int(width * scale_factor), int(height * scale_factor)
+
+        img = img.resize((new_width, new_height), interpolation_methods[resize_method])
+
+        if new_width >= closest_size[0] and new_height >= closest_size[1]:
+            left = (new_width - closest_size[0]) // 2
+            top = (new_height - closest_size[1]) // 2
+            img = img.crop((left, top, left + closest_size[0], top + closest_size[1]))
+        
+        return (pil2tensor(img),)
 
 NODE_CLASS_MAPPINGS = {
     "ImageOverlay|LP": ImageOverlay,
     "FastCheckerPattern|LP": FastCheckerPattern,
     "ImageRemoveBackground|LP": ImageRemoveBackground,
+    "ResizeImageToTargetSize|LP": ResizeImageToTargetSize
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "ImageOverlay|LP": "Image Overlay [LP]",
     "FastCheckerPattern|LP": "Fast Checker Pattern [LP]",
     "ImageRemoveBackground|LP": "Image Remove Background [LP]",
+    "ResizeImageToTargetSize|LP": "Resize Image To Target Size [LP]"
 }
