@@ -8,21 +8,25 @@ app.registerExtension({
 		if (nodeData.name === "ShowText|LP") {
 			function populate(text) {
 				if (this.widgets) {
-					for (let i = 1; i < this.widgets.length; i++) {
+					const isConvertedWidget = +!!this.inputs?.[0].widget;
+					for (let i = isConvertedWidget; i < this.widgets.length; i++) {
 						this.widgets[i].onRemove?.();
 					}
-					this.widgets.length = 1;
+					this.widgets.length = isConvertedWidget;
 				}
 
 				const v = [...text];
 				if (!v[0]) {
 					v.shift();
 				}
-				for (const list of v) {
-					const w = ComfyWidgets["STRING"](this, "text2", ["STRING", { multiline: true }], app).widget;
-					w.inputEl.readOnly = true;
-					w.inputEl.style.opacity = 0.6;
-					w.value = list;
+				for (let list of v) {
+					if (!(list instanceof Array)) list = [list];
+					for (const l of list) {
+						const w = ComfyWidgets["STRING"](this, "text_" + this.widgets?.length ?? 0, ["STRING", { multiline: true }], app).widget;
+						w.inputEl.readOnly = true;
+						w.inputEl.style.opacity = 0.6;
+						w.value = l;
+					}
 				}
 
 				requestAnimationFrame(() => {
@@ -45,11 +49,21 @@ app.registerExtension({
 				populate.call(this, message.text);
 			};
 
+			const VALUES = Symbol();
+			const configure = nodeType.prototype.configure;
+			nodeType.prototype.configure = function () {
+				this[VALUES] = arguments[0]?.widgets_values;
+				return configure?.apply(this, arguments);
+			};
+
 			const onConfigure = nodeType.prototype.onConfigure;
 			nodeType.prototype.onConfigure = function () {
 				onConfigure?.apply(this, arguments);
-				if (this.widgets_values?.length) {
-					populate.call(this, this.widgets_values.slice(+this.widgets_values.length > 1));
+				const widgets_values = this[VALUES];
+				if (widgets_values?.length) {
+					requestAnimationFrame(() => {
+						populate.call(this, widgets_values.slice(+(widgets_values.length > 1 && this.inputs?.[0].widget)));
+					});
 				}
 			};
 		}
