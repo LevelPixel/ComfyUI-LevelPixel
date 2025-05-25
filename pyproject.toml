@@ -1,5 +1,5 @@
 [project]
-name = "comfyui-level-pixel"
+name = "comfyui-levelpixel"
 description = "Main nodes of the Level Pixel company. Includes convenient nodes for working with images from folders; counting files in a folder; cleaning memory; tag filters. Model Unloader, LLM Unloader, Free memory, Tag Filters, Tag Category Filters, Tag Choice Parser, File counter, Image Loader From Path (with counters), Image Remove Background based on RemBG, Autotagger."
 version = "1.1.6"
 license = { file = "LICENSE" }
