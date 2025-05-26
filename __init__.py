@@ -23,12 +23,7 @@ def check_requirements_installed(requirements_path):
 requirements_path  = os.path.join(os.path.dirname(os.path.realpath(__file__)), "requirements.txt")
 check_requirements_installed(requirements_path)
 
-from .install_init import init, get_system_info, install_llama
-
-system_info = get_system_info()
-install_llama(system_info)
-llama_cpp_agent_path  = os.path.join(os.path.dirname(os.path.realpath(__file__)), "cpp_agent_req.txt")
-check_requirements_installed(llama_cpp_agent_path)
+from .install_init import init
 
 init()
 
@@ -42,14 +37,11 @@ node_list = [
     "io.numbers_utils_LP",
     "io.text_inputs_LP",
     "io.text_outputs_LP",
-    "llm.llm_LP",
     "tags.tags_utils_LP",
     "text.text_utils_LP",
     "unloaders.model_unloaders_LP",
-    "vlm.autotagger_LP",
     "unloaders.override_device_LP",
     "utils.utils_LP",
-    "vlm.llava_LP",    
 ]
 
 NODE_CLASS_MAPPINGS = {}

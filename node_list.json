@@ -27,9 +27,6 @@
     "Find Value From File [LP]":"Finding a value by key from a text file",
     "Show Text [LP]":"Show Text node",
     "Show Text Bridge [LP]":"Show Text node for conditions and cycles",
-    "LLM Loader [LP]":"Loads a large language model specified by the user. Models are stored in the LLavacheckpoints folder.",
-    "LLM Sampler [LP]":"Generates text using the LLM. Simple settings.",
-    "LLM Advanced [LP]":"Generates text using the LLM. Advanced settings.",
     "Tag Category [LP]":"Defines categories for tags that are passed as input. By default, a list with categories placed on custom_nodes/ComfyUI-LevelPixel/nodes/tags/tag_category.json",
     "Tag Category Filter [LP]":"Filters tags to exclude or keep only those that match the specified categories.",
     "Tag Category Keeper [LP]":"Filters tags to keep only those that match the specified categories.",
@@ -56,10 +53,10 @@
     "Override VAE Device [LP]":"Changes the main computing processor and the RAM used for VAE. You can specify any video card or processor that is available in the system.",
     "Delay [LP]":"Delay",
     "Autotagger [LP]":"Autotagger based on the latest version of the WD tagging model from SmilingWolf.",
-    "LLava Loader [LP]":"Loads a visual large language model specified by the user. Models are stored in the LLavacheckpoints folder.",
-    "LLava Clip Loader [LP]":"Loads a CLIP model specified by the user for VLM model. Models are stored in the LLavacheckpoints folder.",
-    "LLava Sampler Simple [LP]":"Generates text using the VLM. Simple settings.",
-    "LLava Sampler Advanced [LP]":"Generates text using the VLM. Advanced settings.",
-    "LLava Simple [LP]":"Generates text using the loaded VLM from LLava Loader. Simple settings.",
-    "LLava Advanced [LP]":"Generates text using the loaded VLM from LLava Loader. Advanced settings."
+    "Seed [LP]":"Seed",
+    "String Cycler [LP]":"String Cycler",
+    "Text Replace [LP]":"Text Replace",
+    "Pipe [LP]":"Pipe",
+    "Pipe In [LP]":"Pipe In",
+    "Pipe Out [LP]":"Pipe Out"
 }

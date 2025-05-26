@@ -6,6 +6,12 @@ import string
 from deep_translator import GoogleTranslator
 from langdetect import detect
 
+class AnyType(str):
+    def __ne__(self, __value: object) -> bool:
+        return False
+
+any = AnyType("*")
+
 class TextChoiceParser:
     @classmethod
     def INPUT_TYPES(s):
@@ -253,6 +259,55 @@ class KeepOnlyEnglishWords:
 
         return (result,)
 
+class TextReplace:
+
+    @ classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "text": ("STRING", {"multiline": True, "default": "", "forceInput": True}),            
+                },
+            "optional": {
+                "find1": ("STRING", {"multiline": False, "default": ""}),
+                "replace1": ("STRING", {"multiline": False, "default": ""}),
+                "find2": ("STRING", {"multiline": False, "default": ""}),
+                "replace2": ("STRING", {"multiline": False, "default": ""}),
+                "find3": ("STRING", {"multiline": False, "default": ""}),
+                "replace3": ("STRING", {"multiline": False, "default": ""}),
+                "find4": ("STRING", {"multiline": False, "default": ""}),
+                "replace4": ("STRING", {"multiline": False, "default": ""}),
+                "find5": ("STRING", {"multiline": False, "default": ""}),
+                "replace5": ("STRING", {"multiline": False, "default": ""}),
+                "find6": ("STRING", {"multiline": False, "default": ""}),
+                "replace6": ("STRING", {"multiline": False, "default": ""}),
+                "find7": ("STRING", {"multiline": False, "default": ""}),
+                "replace7": ("STRING", {"multiline": False, "default": ""}),
+                "find8": ("STRING", {"multiline": False, "default": ""}),
+                "replace8": ("STRING", {"multiline": False, "default": ""}),
+                "find9": ("STRING", {"multiline": False, "default": ""}),
+                "replace9": ("STRING", {"multiline": False, "default": ""}),
+            },
+        }
+
+    RETURN_TYPES = (any, )
+    RETURN_NAMES = ("text TEXT", )
+    FUNCTION = "replace_text"
+    CATEGORY = "LevelPixel/Text"
+
+    def replace_text(self, text, find1="", replace1="", find2="", replace2="", find3="", replace3="", find4="", replace4="", find5="", replace5="", find6="", replace6="", find7="", replace7="", find8="", replace8="", find9="", replace9=""):
+           
+        text = text.replace(find1, replace1)
+        text = text.replace(find2, replace2)
+        text = text.replace(find3, replace3)
+        text = text.replace(find4, replace4)
+        text = text.replace(find5, replace5)
+        text = text.replace(find6, replace6)
+        text = text.replace(find7, replace7)
+        text = text.replace(find8, replace8)
+        text = text.replace(find9, replace9)
+        
+        return (text,)   
+
 NODE_CLASS_MAPPINGS = {
     "TextChoiceParser|LP": TextChoiceParser,
     "CLIPTextEncodeTranslate|LP": CLIPTextEncodeTranslate,
@@ -260,6 +315,7 @@ NODE_CLASS_MAPPINGS = {
     "TextToList|LP": TextToList,
     "SplitCompoundText|LP": SplitCompoundText,
     "KeepOnlyEnglishWords|LP": KeepOnlyEnglishWords,
+    "TextReplace|LP": TextReplace,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -269,4 +325,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "TextToList|LP": "Text To List [LP]",
     "SplitCompoundText|LP": "Split Compound Text [LP]",
     "KeepOnlyEnglishWords|LP": "Keep Only English Words [LP]",
+    "TextReplace|LP": "Text Replace [LP]",
 }

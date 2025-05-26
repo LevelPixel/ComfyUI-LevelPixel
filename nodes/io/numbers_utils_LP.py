@@ -88,14 +88,31 @@ class HundredthsFloatSlider:
             number = 1.00
         return (number,)
     
+class Seed:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {"seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff})}}
+
+    RETURN_TYPES = ("INT",  )
+    RETURN_NAMES = ("seed INT", )
+    FUNCTION = "seedint"
+    OUTPUT_NODE = True
+    CATEGORY = "LevelPixel/IO"
+
+    @staticmethod
+    def seedint(seed):
+        return (seed,)
+    
 NODE_CLASS_MAPPINGS = {
     "SimpleFloatSlider|LP": FloatSlider,
     "TenthsSimpleFloatSlider|LP": TenthsFloatSlider,
     "HundredthsSimpleFloatSlider|LP": HundredthsFloatSlider,
+    "Seed|LP": Seed,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "SimpleFloatSlider|LP": "Simple Float Slider [LP]",
     "TenthsSimpleFloatSlider|LP": "Simple Float Slider - Tenths Step [LP]",
     "HundredthsSimpleFloatSlider|LP": "Simple Float Slider - Hundredths Step [LP]",
+    "Seed|LP": "Seed [LP]",
 }

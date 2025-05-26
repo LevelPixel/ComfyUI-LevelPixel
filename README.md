@@ -7,7 +7,13 @@ The purpose of this package is to collect the most necessary and atomic nodes fo
 *Our dream is to see object-oriented programming in ComfyUI. We will try to get closer to it.*
 
 **In this Level Pixel node pack you will find:**
-LLM nodes, LLaVa and other VLM nodes, Image Remove Background based on RemBG, Tag Category Filter nodes, Model Unloader nodes, Autotagger, File Counter, Image Loader From Path, Load Image, Fast Checker Pattern, Float Slider, Load LoRA Tag, Image Overlay, Conversion nodes.
+Image Remove Background based on RemBG, Tag Category Filter nodes, Model Unloader nodes, File Counter, Image Loader From Path, Load Image, Fast Checker Pattern, Float Slider, Load LoRA Tag, Image Overlay, Conversion nodes.
+
+Recommend that you install the advanced node package from Level Pixel Advanced for LLM, VLM, RAM and Autotaggers nodes:
+[https://github.com/LevelPixel/ComfyUI-LevelPixel-Advanced](https://github.com/LevelPixel/ComfyUI-LevelPixel-Advanced)
+
+The official repository of the current node package is located at this link:
+[https://github.com/LevelPixel/ComfyUI-LevelPixel](https://github.com/LevelPixel/ComfyUI-LevelPixel)
 
 ## Contacts:
 
@@ -39,25 +45,10 @@ It will attempt to use symlinks and junctions to prevent having to copy files an
 
 # Features
 
-All nodes Level Pixel:
+All nodes Level Pixel in this package:
 
-<img width="1171" alt="level-pixel-nodes_2" src="https://github.com/user-attachments/assets/63b42605-1720-4a10-a54d-d2950d3d013f">
-
-## LLM nodes
-
-A node that generates text using the LLM model with subsequent unloading of the model from memory. Useful in those workflows where there is constant switching between different models and technologies under conditions of insufficient RAM of the video processor.
-
-Our LLM nodes support the latest LLM and CLIP models, and should support future ones (please let us know if any models stop working).
-
-The core functionality is taken from [ComfyUI_VLM_nodes](https://github.com/gokayfem/ComfyUI_VLM_nodes) and belongs to its authors.
-
-## LLaVa nodes
-
-A node that generates text using the LLM model and CLIP by image and prompt with subsequent unloading of the model from memory.
-
-Our LLava nodes support the latest LLM models, and should support future ones (please let us know if any models stop working).
-
-The core functionality is taken from [ComfyUI_VLM_nodes](https://github.com/gokayfem/ComfyUI_VLM_nodes) and belongs to its authors.
+<img width="1171" alt="level-pixel-nodes_1" src="https://github.com/user-attachments/assets/d0049169-3a68-4aeb-95d9-24a110131dd3">
+<img width="1171" alt="level-pixel-nodes_2" src="https://github.com/user-attachments/assets/f551822b-038f-4083-bb12-41e8dda7ef32">
 
 ## Image Remove Background based on RemBG
 
@@ -72,14 +63,6 @@ pip install rembg[gpu]
 ```
 
 The core functionality is taken from [RemBG nodes for ComfyUI](https://github.com/Loewen-Hob/rembg-comfyui-node-better) and belongs to its authors.
-
-## Autotagger
-
-An image autotagger that creates highly relevant tags using fast and ultra-accurate, highly specialized models. More diverse models are planned to be added to the list of models in the future.
-
-This node allows it to be used in cycles and conditions (in places where it is not necessary to execute this node according to the specified conditions), since it is not a node with mandatory execution.
-
-The core functionality is taken from [ComfyUI-WD14-Tagger](https://github.com/pythongosssss/ComfyUI-WD14-Tagger) and belongs to its authors.
 
 ## Tag Category Filter nodes
 
@@ -138,6 +121,17 @@ There are a few more nodes in this package that have some unusual uses:
 * Text - a simple node for entering multi-line text (similar to Prompt from other node packages).
 * String - a simple node for entering single-line text (similar to String from other node packages).
 * Conversion nodes - a variety of different nodes that allow you to transform different types of variables into other variables. The big difference from other current node packages is that they cover a larger number of variable types. Conversion nodes: StringToFloat, StringToInt, StringToBool, StringToNumber, StringToCombo, IntToString, FloatToString, BoolToString, FloatToInt, IntToFloat, IntToBool, BoolToInt.
+* Pipe - extremely useful and extremely easy to use node for building a beautiful pipeline. One Pipe node is both an input and an output, so I recommend using it where it is absolutely necessary. In addition, there are standard Pipe In and Pipe Out, if you want aesthetics.
+
+## About LLM, LLaVa, VLM, Autotagger, RAM nodes
+
+All LLM nodes have been moved to a separate ComfyUI Level Pixel Advanced node package, as such nodes require the skill of configuring programs, drivers and libraries for correct use, as well as due to constant changes and other frequent changes that may affect all other functionality of the current node package. In addition, some technologies based on neural networks tend to quickly become obsolete (currently in 1-2 years), so they will be in a separate ComfyUI Level Pixel Advanced package.
+
+Link to Level Pixel Advanced nodes with LLM nodes: [https://github.com/LevelPixel/ComfyUI-LevelPixel-Advanced](https://github.com/LevelPixel/ComfyUI-LevelPixel-Advanced)
+
+# Update History
+
+27-05-2025 - The node package is divided into two independent packages - a package with logical nodes [ComfyUI-LevelPixel](https://github.com/LevelPixel/ComfyUI-LevelPixel) and a package with LLM nodes [ComfyUI-LevelPixel-Advanced](https://github.com/LevelPixel/ComfyUI-LevelPixel-Advanced)
 
 # Credits
 

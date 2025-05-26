@@ -1,79 +1,8 @@
 import os
 import json
 import shutil
-import platform
-import subprocess
-import sys
-import importlib.util
-import re
-import torch
 import inspect
-import packaging.tags
-from requests import get
 from server import PromptServer
-
-def get_python_version():
-    version_match = re.match(r"3\.(\d+)", platform.python_version())
-    if version_match:
-        return "3" + version_match.group(1)
-    else:
-        return None
-
-def get_system_info():
-    system_info = {
-        'gpu': False,
-        'cuda_version': None,
-        'python_version': get_python_version(),
-        'os': platform.system(),
-        'os_bit': platform.architecture()[0].replace("bit", ""),
-        'platform_tag': None,
-    }
-
-    # Check for NVIDIA GPU and CUDA version
-    if importlib.util.find_spec('torch'): 
-        system_info['gpu'] = torch.cuda.is_available()
-        if system_info['gpu']:
-            system_info['cuda_version'] = "cu" + torch.version.cuda.replace(".", "").strip()
-    
-    # Determine the platform tag
-    if importlib.util.find_spec('packaging.tags'):        
-        system_info['platform_tag'] = next(packaging.tags.sys_tags()).platform
-
-    return system_info
-
-def latest_lamacpp():
-    try:        
-        response = get("https://api.github.com/repos/abetlen/llama-cpp-python/releases/latest")
-        return response.json()["tag_name"].replace("v", "")
-    except Exception:
-        return "0.2.20"
-
-def install_package(package_name, custom_command=None):
-    if not package_is_installed(package_name):
-        print(f"Installing {package_name}...")
-        command = [sys.executable, "-m", "pip", "install", package_name, "--no-cache-dir"]
-        if custom_command:
-            command += custom_command.split()
-        subprocess.check_call(command)
-    else:
-        print(f"{package_name} is already installed.")
-
-def package_is_installed(package_name):
-    return importlib.util.find_spec(package_name) is not None
-
-def install_llama(system_info):
-    imported = package_is_installed("llama-cpp-python") or package_is_installed("llama_cpp")
-    if not imported:
-        lcpp_version = latest_lamacpp()
-        base_url = "https://github.com/abetlen/llama-cpp-python/releases/download/v"
-
-        if system_info['gpu']:
-            cuda_version = system_info['cuda_version']
-            #custom_command =  f"--force-reinstall --no-deps --index-url=https://abetlen.github.io/llama-cpp-python/whl/{cuda_version}"   #need fix 
-            custom_command =  f"--force-reinstall --no-deps --index-url=https://abetlen.github.io/llama-cpp-python/whl/cu124"
-        else:
-            custom_command = f"{base_url}{lcpp_version}/llama_cpp_python-{lcpp_version}-{system_info['platform_tag']}.whl"
-        install_package("llama-cpp-python", custom_command=custom_command)
 
 config = None
 
@@ -94,6 +23,24 @@ def log(message, type=None, always=False, name=None):
         name = get_extension_config()["name"]
 
     print(f"(levelpixel-nodes:{name}) {message}")
+
+def link_js(src, dst):
+    src = os.path.abspath(src)
+    dst = os.path.abspath(dst)
+    if os.name == "nt":
+        try:
+            import _winapi
+            _winapi.CreateJunction(src, dst)
+            return True
+        except:
+            pass
+    try:
+        os.symlink(src, dst)
+        return True
+    except:
+        import logging
+        logging.exception('')
+        return False
 
 def get_ext_dir(subpath=None, mkdir=False):
     dir = os.path.dirname(__file__)
@@ -131,23 +78,25 @@ def get_extension_config(reload=False):
         config = json.loads(f.read())
     return config
 
-def link_js(src, dst):
-    src = os.path.abspath(src)
-    dst = os.path.abspath(dst)
-    if os.name == "nt":
-        try:
-            import _winapi
-            _winapi.CreateJunction(src, dst)
-            return True
-        except:
-            pass
-    try:
-        os.symlink(src, dst)
-        return True
-    except:
-        import logging
-        logging.exception('')
-        return False
+def get_comfy_dir(subpath=None, mkdir=False):
+    dir = os.path.dirname(inspect.getfile(PromptServer))
+    if subpath is not None:
+        dir = os.path.join(dir, subpath)
+
+    dir = os.path.abspath(dir)
+
+    if mkdir and not os.path.exists(dir):
+        os.makedirs(dir)
+    return dir
+
+def get_web_ext_dir():
+    config = get_extension_config()
+    name = config["name"]
+    dir = get_comfy_dir("web/extensions/levelpixel")
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+    dir = os.path.join(dir, name)
+    return dir
 
 def is_junction(path):
     if os.name != "nt":
@@ -156,6 +105,9 @@ def is_junction(path):
         return bool(os.readlink(path))
     except OSError:
         return False
+
+def should_install_js():
+    return not hasattr(PromptServer.instance, "supports") or "custom_nodes_from_web" not in PromptServer.instance.supports
 
 def install_js():
     src_dir = get_ext_dir("web/js")
@@ -190,30 +142,6 @@ def install_js():
 
     log("Copying JS files")
     shutil.copytree(src_dir, dst_dir, dirs_exist_ok=True)
-
-def get_web_ext_dir():
-    config = get_extension_config()
-    name = config["name"]
-    dir = get_comfy_dir("web/extensions/levelpixel")
-    if not os.path.exists(dir):
-        os.makedirs(dir)
-    dir = os.path.join(dir, name)
-    return dir
-
-def get_comfy_dir(subpath=None, mkdir=False):
-    dir = os.path.dirname(inspect.getfile(PromptServer))
-    if subpath is not None:
-        dir = os.path.join(dir, subpath)
-
-    dir = os.path.abspath(dir)
-
-    if mkdir and not os.path.exists(dir):
-        os.makedirs(dir)
-    return dir
-
-def should_install_js():
-    return not hasattr(PromptServer.instance, "supports") or "custom_nodes_from_web" not in PromptServer.instance.supports
-
 
 def init(check_imports=None):
     log("Init")

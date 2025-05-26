@@ -1,5 +1,11 @@
 import os
 
+class AnyType(str):
+    def __ne__(self, __value: object) -> bool:
+        return False
+
+any = AnyType("*")
+
 class Text:
 
     def __init__(self):
@@ -89,14 +95,45 @@ class FindValueFromFile:
         
         return {"ui": {"text": valueString, "log": log,}, "result": (valueString, boolResult,)}
 
+class StringCycler:
+    
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {
+            "text": ("STRING", {"multiline": True, "default": ""}),
+            "repeats": ("INT", {"default": 1, "min": 1, "max": 99999}),
+            "loops": ("INT", {"default": 1, "min": 1, "max": 99999}),
+            }
+        }
+
+    RETURN_TYPES = (any,)
+    RETURN_NAMES = ("STRING",)
+    OUTPUT_IS_LIST = (True,)
+    FUNCTION = "string_cycle"
+    CATEGORY = "LevelPixel/IO"  
+
+    def string_cycle(self, text, repeats, loops=1):
+
+        lines = text.split('\n')
+        list_out = []
+
+        for i in range(loops):
+            for text_item in lines:
+                for _ in range(repeats):
+                    list_out.append(text_item)
+        
+        return (list_out, )
+
 NODE_CLASS_MAPPINGS = {
     "Text|LP": Text,
     "String|LP": String,
     "FindValueFromFile|LP": FindValueFromFile,
+    "StringCycler|LP": StringCycler,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "Text|LP": "Text [LP]",
     "String|LP": "String [LP]",
     "FindValueFromFile|LP": "Find Value From File [LP]",
+    "StringCycler|LP": "String Cycler [LP]",
 }
