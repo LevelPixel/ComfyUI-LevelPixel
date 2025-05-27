@@ -87,7 +87,7 @@ class TextTranslate:
     def INPUT_TYPES(s):
         return {"required": {"text": ("STRING", {"default": "text", "multiline": True})}}
     RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("text",)
+    RETURN_NAMES = ("english TEXT",)
     FUNCTION = "text_translate"
     CATEGORY = "LevelPixel/Text"
 
@@ -100,6 +100,104 @@ class TextTranslate:
                     text = translator.translate(text)
                 except Exception as e:
                     print(f"Translation error: {e}")
+        return (text,)
+    
+class TextTranslateManualAll:
+    @classmethod
+    def INPUT_TYPES(s):
+        source_language_codes = [
+            'auto', 'af', 'am', 'ar', 'az', 'be', 'bg', 'bn', 'bs', 'ca', 'ceb', 'co', 
+            'cs', 'cy', 'da', 'de', 'el', 'en', 'eo', 'es', 'et', 'eu', 'fa', 'fi', 
+            'fr', 'fy', 'ga', 'gd', 'gl', 'gu', 'ha', 'haw', 'he', 'hi', 'hmn', 'hr', 
+            'ht', 'hu', 'hy', 'id', 'ig', 'is', 'it', 'ja', 'jv', 'ka', 'kk', 'km', 
+            'kn', 'ko', 'ku', 'ky', 'la', 'lb', 'lo', 'lt', 'lv', 'mg', 'mi', 'mk', 
+            'ml', 'mn', 'mr', 'ms', 'mt', 'my', 'ne', 'nl', 'no', 'ny', 'pa', 'pl', 
+            'ps', 'pt', 'ro', 'ru', 'rw', 'sd', 'si', 'sk', 'sl', 'sm', 'sn', 'so', 
+            'sq', 'sr', 'st', 'su', 'sv', 'sw', 'ta', 'te', 'tg', 'th', 'tk', 'tl', 'tr', 
+            'tt', 'ug', 'uk', 'ur', 'uz', 'vi', 'xh', 'yi', 'yo', 'zh-CN', 'zh-TW', 'zu'
+        ]
+        target_language_codes = [code for code in source_language_codes if code != 'auto']
+        return {
+            "required": {"text": ("STRING", {"default": "text", "multiline": True}),
+                         "source_lang": (source_language_codes, {"default":"auto"}),
+                         "target_lang": (target_language_codes, {"default":"en"})},
+            }
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("text",)
+    FUNCTION = "text_translate_manual_all"
+    CATEGORY = "LevelPixel/Text"
+
+    def text_translate_manual_all(self, text, source_lang='auto', target_lang='en'):
+        if text.strip():
+            try:
+                translator = GoogleTranslator(source=source_lang, target=target_lang)
+                text = translator.translate(text)
+            except Exception as e:
+                print(f"Translation error: {e}")
+        return (text,)
+    
+class TextTranslateManual:
+    @classmethod
+    def INPUT_TYPES(s):
+        source_language_codes = [
+            'auto',
+            'English',
+            'Русский',
+            'Deutsch',
+            'Français',
+            'Italiano',
+            'Polski',
+            'Українська',
+            'Nederlands',
+            'Español',
+            '简体中文',
+            '繁體中文',
+            '日本語',
+            'हिन्दी',
+            'العربية',
+            'Português',
+            'বাংলা'
+        ]
+        target_language_codes = [code for code in source_language_codes if code != 'auto']
+        return {
+            "required": {"text": ("STRING", {"default": "text", "multiline": True}),
+                         "source_lang": (source_language_codes, {"default":"auto"}),
+                         "target_lang": (target_language_codes, {"default":"English"})},
+            }
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("text",)
+    FUNCTION = "text_translate_manual"
+    CATEGORY = "LevelPixel/Text"
+
+    def text_translate_manual(self, text, source_lang='auto', target_lang='English'):
+        language_name_to_code = {
+            'auto': 'auto',
+            'English': 'en',
+            'Русский': 'ru',
+            'Deutsch': 'de',
+            'Français': 'fr',
+            'Italiano': 'it',
+            'Polski': 'pl',
+            'Українська': 'uk',
+            'Nederlands': 'nl',
+            'Español': 'es',
+            '简体中文': 'zh-CN',
+            '繁體中文': 'zh-TW',
+            '日本語': 'ja',
+            'हिन्दी': 'hi',
+            'العربية': 'ar',
+            'Português': 'pt',
+            'বাংলা': 'bn',
+        }
+
+        if text.strip():
+            try:
+                source_lang_code = language_name_to_code.get(source_lang)
+                target_lang_code = language_name_to_code.get(target_lang)
+                translator = GoogleTranslator(source=source_lang_code, target=target_lang_code)
+                text = translator.translate(text)
+            except Exception as e:
+                print(f"Translation error: {e}")
         return (text,)
 
 class TextToList:
@@ -312,6 +410,8 @@ NODE_CLASS_MAPPINGS = {
     "TextChoiceParser|LP": TextChoiceParser,
     "CLIPTextEncodeTranslate|LP": CLIPTextEncodeTranslate,
     "TextTranslate|LP": TextTranslate,
+    "TextTranslateManualAll|LP": TextTranslateManualAll,
+    "TextTranslateManual|LP": TextTranslateManual,
     "TextToList|LP": TextToList,
     "SplitCompoundText|LP": SplitCompoundText,
     "KeepOnlyEnglishWords|LP": KeepOnlyEnglishWords,
@@ -322,6 +422,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "TextChoiceParser|LP": "Text Choice Parser [LP]",
     "CLIPTextEncodeTranslate|LP": "CLIP Text Encode Translate [LP]",
     "TextTranslate|LP": "Text Translate [LP]",
+    "TextTranslateManualAll|LP": "Text Translate Manual (All langs) [LP]",
+    "TextTranslateManual|LP": "Text Translate Manual [LP]",
     "TextToList|LP": "Text To List [LP]",
     "SplitCompoundText|LP": "Split Compound Text [LP]",
     "KeepOnlyEnglishWords|LP": "Keep Only English Words [LP]",
