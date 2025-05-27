@@ -47,8 +47,8 @@ It will attempt to use symlinks and junctions to prevent having to copy files an
 
 All nodes Level Pixel in this package:
 
-<img width="1171" alt="level-pixel-nodes_1" src="https://github.com/user-attachments/assets/d0049169-3a68-4aeb-95d9-24a110131dd3">
-<img width="1171" alt="level-pixel-nodes_2" src="https://github.com/user-attachments/assets/f551822b-038f-4083-bb12-41e8dda7ef32">
+<img width="1171" alt="level-pixel-nodes_1" src="https://github.com/user-attachments/assets/c5c05c9c-58b5-4bbb-9604-08e98eaeb587">
+<img width="1171" alt="level-pixel-nodes_2" src="https://github.com/user-attachments/assets/beb81eea-7dbc-4959-bf4c-0d3b249b7f20">
 
 ## Image Remove Background based on RemBG
 
