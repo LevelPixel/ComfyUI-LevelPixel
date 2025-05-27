@@ -9,10 +9,10 @@ The purpose of this package is to collect the most necessary and atomic nodes fo
 **In this Level Pixel node pack you will find:**
 Image Remove Background based on RemBG, Tag Category Filter nodes, Model Unloader nodes, File Counter, Image Loader From Path, Load Image, Fast Checker Pattern, Float Slider, Load LoRA Tag, Image Overlay, Conversion nodes.
 
-Recommend that you install the advanced node package from Level Pixel Advanced for LLM, VLM, RAM and Autotaggers nodes:
+Recommend that you install the advanced node package from Level Pixel Advanced for LLM, VLM, RAM and Autotaggers nodes:\
 [https://github.com/LevelPixel/ComfyUI-LevelPixel-Advanced](https://github.com/LevelPixel/ComfyUI-LevelPixel-Advanced)
 
-The official repository of the current node package is located at this link:
+The official repository of the current node package is located at this link:\
 [https://github.com/LevelPixel/ComfyUI-LevelPixel](https://github.com/LevelPixel/ComfyUI-LevelPixel)
 
 ## Contacts:
@@ -47,7 +47,7 @@ It will attempt to use symlinks and junctions to prevent having to copy files an
 
 All nodes Level Pixel in this package:
 
-<img width="1171" alt="level-pixel-nodes_1" src="https://github.com/user-attachments/assets/c5c05c9c-58b5-4bbb-9604-08e98eaeb587">
+<img width="1171" alt="level-pixel-nodes_1" src="https://github.com/user-attachments/assets/4bc1fb4c-1379-4369-9f12-efc9992a0a6a">
 <img width="1171" alt="level-pixel-nodes_2" src="https://github.com/user-attachments/assets/beb81eea-7dbc-4959-bf4c-0d3b249b7f20">
 
 ## Image Remove Background based on RemBG
@@ -127,7 +127,7 @@ There are a few more nodes in this package that have some unusual uses:
 
 All LLM nodes have been moved to a separate ComfyUI Level Pixel Advanced node package, as such nodes require the skill of configuring programs, drivers and libraries for correct use, as well as due to constant changes and other frequent changes that may affect all other functionality of the current node package. In addition, some technologies based on neural networks tend to quickly become obsolete (currently in 1-2 years), so they will be in a separate ComfyUI Level Pixel Advanced package.
 
-Link to Level Pixel Advanced nodes with LLM nodes: [https://github.com/LevelPixel/ComfyUI-LevelPixel-Advanced](https://github.com/LevelPixel/ComfyUI-LevelPixel-Advanced)
+Link to Level Pixel Advanced nodes with LLM nodes:\ [https://github.com/LevelPixel/ComfyUI-LevelPixel-Advanced](https://github.com/LevelPixel/ComfyUI-LevelPixel-Advanced)
 
 # Update History
 
