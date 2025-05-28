@@ -186,11 +186,14 @@ def install_onnxruntime_and_rembg():
             install("onnxruntime-gpu>=1.22")
     else:
         if is_installed('onnxruntime-gpu'):
-            uninstall("onnxruntime-gpu")
+            #uninstall("onnxruntime-gpu")
+            print(f"LP >>> Your python has the 'onnxruntime-gpu' library installed, but you don't have a GPU.")
+            print(f"LP >>> Solution: If other node packages do not use the 'onnxruntime-gpu' library, then remove the 'onnxruntime-gpu' library for your python.")
+            print(f"LP >>> Close ComfyUI and run the script at .\\ComfyUI\\custom_nodes\\ComfyUI-LevelPixel\\scripts\\remove_onnxruntime.bat")
         if not is_installed('onnxruntime'):
             install("onnxruntime>=1.22")
 
-    rembg_pkg = 'rembg[gpu]'      if gpu else 'rembg[cpu]'
+    rembg_pkg = 'rembg[gpu]' if gpu else 'rembg[cpu]'
 
     if not is_installed('rembg', '2.0.66'):
         install(f'{rembg_pkg}>={'2.0.66'}')
