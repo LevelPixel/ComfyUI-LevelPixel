@@ -9,6 +9,10 @@ if /I "%user_input%"=="Y" (
 
     cd ..\..\..\..
     .\python_embeded\python.exe -m pip uninstall -y onnxruntime
+    .\python_embeded\python.exe -m pip uninstall -y onnxruntime-gpu
+
+    rmdir /s /q "python_embeded\Lib\site-packages\onnxruntime"
+    for /d %%D in ("python_embeded\Lib\site-packages\onnxruntime-*") do rmdir /s /q "%%~fD"
 ) else (
     echo Please close the ComfyUI console first and run this script again.
 )

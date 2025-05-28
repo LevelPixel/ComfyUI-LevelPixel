@@ -172,13 +172,16 @@ def install(pkg_spec: str):
 def uninstall(pkg: str):
     subprocess.check_call([sys.executable, '-m', 'pip', 'uninstall', '-y', pkg])
 
-def install_onnxruntime():
-    if has_nvidia_cuda():
+def install_onnxruntime_and_rembg():
+    gpu = has_nvidia_cuda()
+    print(f"Found NVIDIA GPU: {gpu}")
+    if gpu:
         if is_installed('onnxruntime'):
             #uninstall("onnxruntime")
             print(f"LP >>> Your python has the 'onnxruntime' library installed, although your computer supports 'onnxruntime-gpu'.")
             print(f"LP >>> Solution: If other node packages do not use the 'onnxruntime' library, then remove the 'onnxruntime' library for your python.")
             print(f"LP >>> Otherwise the Image Remove Background node will not work effectively (the node will use the CPU instead of the GPU).")
+            print(f"LP >>> Close ComfyUI and run the script at .\\ComfyUI\\custom_nodes\\ComfyUI-LevelPixel\\scripts\\remove_onnxruntime.bat")
         if not is_installed('onnxruntime-gpu'):
             install("onnxruntime-gpu>=1.22")
     else:
@@ -186,6 +189,11 @@ def install_onnxruntime():
             uninstall("onnxruntime-gpu")
         if not is_installed('onnxruntime'):
             install("onnxruntime>=1.22")
+
+    rembg_pkg = 'rembg[gpu]'      if gpu else 'rembg[cpu]'
+
+    if not is_installed('rembg', '2.0.66'):
+        install(f'{rembg_pkg}>={'2.0.66'}')
 
 def init(check_imports=None):
     log("Init")
@@ -200,5 +208,5 @@ def init(check_imports=None):
                 return False
 
     install_js()
-    install_onnxruntime()
+    install_onnxruntime_and_rembg()
     return True

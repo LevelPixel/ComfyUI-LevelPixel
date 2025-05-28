@@ -4,9 +4,7 @@ import torch
 from PIL import Image, ImageOps
 import matplotlib.pyplot as plt
 import comfy.utils
-import subprocess
-import sys
-from importlib import metadata
+
     
 color_mapping = {
     "white": (255, 255, 255),
@@ -146,32 +144,6 @@ def tensor2pil(image):
 def list_model():
     return model_list
 
-def has_nvidia_cuda():
-    try:
-        output = subprocess.check_output(
-            ['nvidia-smi', '--query-gpu=name', '--format=csv,noheader'],
-            stderr=subprocess.DEVNULL,
-            encoding='utf-8'
-        ).strip()
-        return bool(output)
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        return False
-    
-def is_installed(pkg_name: str, min_version: str = '') -> bool:
-    try:
-        ver = metadata.version(pkg_name)
-        if min_version:
-            return tuple(map(int, ver.split('.'))) >= tuple(map(int, min_version.split('.')))
-        return True
-    except metadata.PackageNotFoundError:
-        return False
-
-def install(pkg_spec: str):
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install', pkg_spec])
-
-def uninstall(pkg: str):
-    subprocess.check_call([sys.executable, '-m', 'pip', 'uninstall', '-y', pkg])
-
 class ImageRemoveBackground:
     def __init__(self):
         pass
@@ -190,32 +162,7 @@ class ImageRemoveBackground:
     CATEGORY = "LevelPixel/Image"
 
     def remove_background(self, image, model_name):
-        gpu = has_nvidia_cuda()
-        print(f"Found NVIDIA GPU: {gpu}")
-
-        rembg_pkg = 'rembg[gpu]'      if gpu else 'rembg[cpu]'
-        rembg_ver = '2.0.66'
-
-        if gpu:
-            if is_installed('onnxruntime'):
-                #uninstall("onnxruntime")
-                print(f"LP >>> !!! WARNING about Image Remove Background:")
-                print(f"LP >>> Your python has the 'onnxruntime' library installed, although your computer supports 'onnxruntime-gpu'.")
-                print(f"LP >>> Solution: If other node packages do not use the 'onnxruntime' library, then remove the 'onnxruntime' library for your python.")
-                print(f"LP >>> Otherwise the Image Remove Background node will not work effectively (the node will use the CPU instead of the GPU).")
-            if not is_installed('onnxruntime-gpu'):
-                install("onnxruntime-gpu>=1.22")
-        else:
-            if is_installed('onnxruntime-gpu'):
-                uninstall("onnxruntime-gpu")
-            if not is_installed('onnxruntime'):
-                install("onnxruntime>=1.22")
-
-        if not is_installed('rembg', rembg_ver):
-            install(f'{rembg_pkg}>={rembg_ver}')
-
         from rembg import new_session, remove
-
         session = new_session(model_name)
         image = pil2tensor(remove(tensor2pil(image), session = session))
         return (image,)
