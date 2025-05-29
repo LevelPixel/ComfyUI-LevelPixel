@@ -13,7 +13,6 @@
     "Convert Bool To Int [LP]":"Convert Bool To Int",
     "Image Overlay [LP]":"Image Overlay",
     "Fast Checker Pattern [LP]":"Fast Checker Pattern",
-    "Image Remove Background [LP]":"Removes background for images with user-defined model",
     "File Counter [LP]":"Counts the number of files in the specified folder",
     "Image Loader From Path [LP]":"Loading multiple images from specific folder",
     "Load Image [LP]":"Load Image by filepath",

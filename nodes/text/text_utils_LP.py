@@ -3,14 +3,51 @@ import random
 import time
 import wordninja
 import string
-from deep_translator import GoogleTranslator
+from deep_translator import GoogleTranslator, MyMemoryTranslator
 from langdetect import detect
+
+translators = ['GoogleTranslator', 'MyMemoryTranslator']
 
 class AnyType(str):
     def __ne__(self, __value: object) -> bool:
         return False
 
 any = AnyType("*")
+
+def split_text(text, limit=499):
+    if len(text) <= limit:
+        return [text]
+
+    parts = []
+
+    if '\n' in text:
+        for line in text.split('\n'):
+            if not line:
+                parts.append('')
+            elif len(line) <= limit:
+                parts.append(line)
+            else:
+                parts.extend(split_text(line, limit))
+        return parts
+
+    sentences = re.findall(r'.*?[\.!?]|.+$', text)
+
+    chunk = ''
+    for s in (s.strip() for s in sentences if s.strip()):
+        if not chunk:
+            chunk = s
+        elif len(chunk) + 1 + len(s) <= limit:
+            chunk += ' ' + s
+        else:
+            parts.append(chunk)
+            chunk = s
+    if chunk:
+        parts.append(chunk)
+
+    return parts
+
+def join_text(parts):
+    return '\n\n'.join(parts)
 
 class TextChoiceParser:
     @classmethod
@@ -85,19 +122,31 @@ class CLIPTextEncodeTranslate:
 class TextTranslate:
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": {"text": ("STRING", {"default": "text", "multiline": True})}}
+        return {"required": {"text": ("STRING", {"default": "text", "multiline": True}),
+                            "translator": (translators, {"default":"GoogleTranslator"})
+                         }
+                }
+        
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("english TEXT",)
     FUNCTION = "text_translate"
     CATEGORY = "LevelPixel/Text"
 
-    def text_translate(self, text):
+    def text_translate(self, text, translator='GoogleTranslator'):
         if text.strip():
             detected_lang = detect(text)
             if detected_lang != 'en':
                 try:
-                    translator = GoogleTranslator(source='auto', target='en')
-                    text = translator.translate(text)
+                    if translator == 'MyMemoryTranslator':
+                        sentences = split_text(text, 499)
+                        translator = MyMemoryTranslator(source='auto', target='en-US')                        
+                        texts = translator.translate_batch(sentences)
+                        text = join_text(texts)
+                    else:
+                        sentences = split_text(text, 4999)
+                        translator = GoogleTranslator(source='auto', target='en')
+                        texts = translator.translate_batch(sentences)
+                        text = join_text(texts)
                 except Exception as e:
                     print(f"Translation error: {e}")
         return (text,)
@@ -120,18 +169,28 @@ class TextTranslateManualAll:
         return {
             "required": {"text": ("STRING", {"default": "text", "multiline": True}),
                          "source_lang": (source_language_codes, {"default":"auto"}),
-                         "target_lang": (target_language_codes, {"default":"en"})},
-            }
+                         "target_lang": (target_language_codes, {"default":"en"}),
+                         "translator": (translators, {"default":"GoogleTranslator"})
+                         }
+                }
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("text",)
     FUNCTION = "text_translate_manual_all"
     CATEGORY = "LevelPixel/Text"
 
-    def text_translate_manual_all(self, text, source_lang='auto', target_lang='en'):
+    def text_translate_manual_all(self, text, source_lang='auto', target_lang='en', translator='GoogleTranslator'):
         if text.strip():
             try:
-                translator = GoogleTranslator(source=source_lang, target=target_lang)
-                text = translator.translate(text)
+                if translator == 'MyMemoryTranslator':
+                    sentences = split_text(text, 499)
+                    translator = MyMemoryTranslator(source=source_lang, target=target_lang)                    
+                    texts = translator.translate_batch(sentences)
+                    text = join_text(texts)
+                else:
+                    sentences = split_text(text, 4999)
+                    translator = GoogleTranslator(source=source_lang, target=target_lang)
+                    texts = translator.translate_batch(sentences)
+                    text = join_text(texts)
             except Exception as e:
                 print(f"Translation error: {e}")
         return (text,)
@@ -162,15 +221,17 @@ class TextTranslateManual:
         return {
             "required": {"text": ("STRING", {"default": "text", "multiline": True}),
                          "source_lang": (source_language_codes, {"default":"auto"}),
-                         "target_lang": (target_language_codes, {"default":"English"})},
-            }
+                         "target_lang": (target_language_codes, {"default":"English"}),
+                         "translator": (translators, {"default":"GoogleTranslator"})
+                         }
+                }
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("text",)
     FUNCTION = "text_translate_manual"
     CATEGORY = "LevelPixel/Text"
 
-    def text_translate_manual(self, text, source_lang='auto', target_lang='English'):
-        language_name_to_code = {
+    def text_translate_manual(self, text, source_lang='auto', target_lang='English', translator='GoogleTranslator'):
+        google_language_name_to_code = {
             'auto': 'auto',
             'English': 'en',
             'Русский': 'ru',
@@ -190,12 +251,42 @@ class TextTranslateManual:
             'বাংলা': 'bn',
         }
 
+        mymemory_language_name_to_code = {
+            'auto': 'auto',
+            'English': 'en-US',
+            'Русский': 'ru-RU',
+            'Deutsch': 'de-DE',
+            'Français': 'fr-FR',
+            'Italiano': 'it-IT',
+            'Polski': 'pl-PL',
+            'Українська': 'uk-UA',
+            'Nederlands': 'nl-NL',
+            'Español': 'es-ES',
+            '简体中文': 'zh-CN',
+            '繁體中文': 'zh-TW',
+            '日本語': 'ja-JP',
+            'हिन्दी': 'hi-IN',
+            'العربية': 'ar-SA',
+            'Português': 'pt-PT',
+            'বাংলা': 'bn-IN',
+        }
+
         if text.strip():
             try:
-                source_lang_code = language_name_to_code.get(source_lang)
-                target_lang_code = language_name_to_code.get(target_lang)
-                translator = GoogleTranslator(source=source_lang_code, target=target_lang_code)
-                text = translator.translate(text)
+                if translator == 'MyMemoryTranslator':
+                    source_lang_code = mymemory_language_name_to_code.get(source_lang)
+                    target_lang_code = mymemory_language_name_to_code.get(target_lang)
+                    sentences = split_text(text, 499)
+                    translator = MyMemoryTranslator(source=source_lang_code, target=target_lang_code)                    
+                    texts = translator.translate_batch(sentences)
+                    text = join_text(texts)
+                else:
+                    source_lang_code = google_language_name_to_code.get(source_lang)
+                    target_lang_code = google_language_name_to_code.get(target_lang)
+                    sentences = split_text(text, 4999)
+                    translator = GoogleTranslator(source=source_lang_code, target=target_lang_code)
+                    texts = translator.translate_batch(sentences)
+                    text = join_text(texts)
             except Exception as e:
                 print(f"Translation error: {e}")
         return (text,)

@@ -1,7 +1,6 @@
 torch>=2.0.1
 numpy
 matplotlib
-rembg>=2.0.59
 langdetect
-deep_translator
+deep_translator>=1.11.4
 wordninja

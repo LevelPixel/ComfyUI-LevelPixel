@@ -9,7 +9,7 @@ The purpose of this package is to collect the most necessary and atomic nodes fo
 **In this Level Pixel node pack you will find:**
 Image Remove Background based on RemBG, Tag Category Filter nodes, Model Unloader nodes, File Counter, Image Loader From Path, Load Image, Fast Checker Pattern, Float Slider, Load LoRA Tag, Image Overlay, Conversion nodes.
 
-Recommend that you install the advanced node package from Level Pixel Advanced for LLM, VLM, RAM and Autotaggers nodes:\
+Recommend that you install the advanced node package from Level Pixel Advanced for Multimodal Generators, Qwen2.5-VL gguf, LLM, VLM, RAM, Autotaggers, RemBG nodes:\
 [https://github.com/LevelPixel/ComfyUI-LevelPixel-Advanced](https://github.com/LevelPixel/ComfyUI-LevelPixel-Advanced)
 
 The official repository of the current node package is located at this link:\
@@ -22,12 +22,12 @@ levelpixel.dev@gmail.com
 
 # Installation:
 
-## Installation Using ComfyUI Manager (recommended):
+## Installation package using ComfyUI Manager (recommended):
 
 Install [ComfyUI Manager](https://github.com/ltdrdata/ComfyUI-Manager) and do steps introduced there to install this repo 'ComfyUI-LevelPixel'.
 The nodes of the current package will be updated automatically when you click "Update ALL" in ComfyUI Manager.
 
-## Alternative installation:
+## Alternative installation package:
 
 Clone the repository:
 `git clone https://github.com/LevelPixel/ComfyUI-LevelPixel.git`
@@ -47,22 +47,8 @@ It will attempt to use symlinks and junctions to prevent having to copy files an
 
 All nodes Level Pixel in this package:
 
-<img width="1171" alt="level-pixel-nodes_1" src="https://github.com/user-attachments/assets/4bc1fb4c-1379-4369-9f12-efc9992a0a6a">
-<img width="1171" alt="level-pixel-nodes_2" src="https://github.com/user-attachments/assets/beb81eea-7dbc-4959-bf4c-0d3b249b7f20">
-
-## Image Remove Background based on RemBG
-
-A more improved version of rembg nodes for ComfyUI with an extended list of models.
-
-To use on GPU, at least CUDA 12.4 (Pytorch cu124) is required, so I recommend upgrading to newer versions of ComfyUI and Pytorch.
-If GPU still doesn't work, use for your python:
-
-```
-pip uninstall rembg
-pip install rembg[gpu]
-```
-
-The core functionality is taken from [RemBG nodes for ComfyUI](https://github.com/Loewen-Hob/rembg-comfyui-node-better) and belongs to its authors.
+<img width="1171" alt="level-pixel-nodes_1" src="https://github.com/user-attachments/assets/10fa67be-766c-4936-9fbd-fdf3830cd290">
+<img width="1171" alt="level-pixel-nodes_2" src="https://github.com/user-attachments/assets/f9c1e2ab-1bfc-4f4d-9fd5-b4c8c00e4423">
 
 ## Tag Category Filter nodes
 
@@ -115,6 +101,7 @@ The core functionality is taken from [comfyui-mixlab-nodes](https://github.com/s
 
 There are a few more nodes in this package that have some unusual uses:
 
+* Google Translate
 * Preview Image Bridge - only output an image to the screen if there is a connection to the output node. Useful in loops and conditions where the execution of this node is not required due to current conditions (variables).
 * Show Text Bridge - only output text to the screen if there is a connection to the output node. Useful in loops and conditions where the execution of this node is not required due to current conditions (variables).
 * Show Text - output text to the screen with mandatory execution. The node is executed in any case, whether the output is connected or not.
@@ -131,7 +118,7 @@ Link to Level Pixel Advanced nodes with LLM nodes:\ [https://github.com/LevelPix
 
 # Update History
 
-27-05-2025 - The node package is divided into two independent packages - a package with logical nodes [ComfyUI-LevelPixel](https://github.com/LevelPixel/ComfyUI-LevelPixel) and a package with LLM nodes [ComfyUI-LevelPixel-Advanced](https://github.com/LevelPixel/ComfyUI-LevelPixel-Advanced)
+27-05-2025 - The node package is divided into two independent packages - a package with logical nodes [ComfyUI-LevelPixel](https://github.com/LevelPixel/ComfyUI-LevelPixel) and a package with wrapper-nodes for neural models [ComfyUI-LevelPixel-Advanced](https://github.com/LevelPixel/ComfyUI-LevelPixel-Advanced)
 
 # Credits
 
@@ -145,12 +132,8 @@ Load LoRA Tag node for ComfyUI/[comfyui_lora_tag_loader](https://github.com/badj
 
 Efficiency-nodes-comfyui/[efficiency-nodes-comfyui](https://github.com/jags111/efficiency-nodes-comfyui) - Thanks for Image Overlay!
 
-RemBG nodes for ComfyUI/[rembg-comfyui-node](https://github.com/Loewen-Hob/rembg-comfyui-node-better) - RemBG nodes for ComfyUI.
-
-RemBG software package/[rembg](https://github.com/danielgatis/rembg) - Best software to remove background for any object in the picture.
-
 # License
 
 Copyright (c) 2024-present [Level Pixel](https://github.com/LevelPixel)
 
-Licensed under Apache License
+Licensed under Apache-2.0 License

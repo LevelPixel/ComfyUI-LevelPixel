@@ -1,9 +1,15 @@
 [project]
 name = "comfyui-levelpixel"
-description = "Main nodes of the Level Pixel company (aka levelpixel, LP). Includes convenient nodes for working with images from folders; counting files in a folder; cleaning memory; tag filters. Model Unloader, Free memory, Tag Filters, Tag Category Filters, Tag Choice Parser, File counter, Image Loader From Path (with counters), Image Remove Background based on RemBG, Google Translator, Language Translator, Override Device, Delay, Lora Tag Loader."
+description = "Main nodes of the [Level Pixel](https://github.com/LevelPixel/ComfyUI-LevelPixel) company (aka levelpixel, LP). Includes convenient nodes for working with images from folders; counting files in a folder; cleaning memory; tag filters. Model Unloader, Free memory, Tag Filters, Tag Category Filters, Tag Choice Parser, File counter, Image Loader From Path (with counters), Google Translator, Language Translator, Override Device, Delay, Lora Tag Loader."
 version = "1.2.3"
 license = { file = "LICENSE" }
-dependencies = ["torch>=2.0.1", "torchvision>=0.15.2", "pillow>=9.4.0", "numpy", "matplotlib", "scikit-build-core>=0.10.7", "rembg>=2.0.59", "langdetect", "deep_translator"]
+dependencies = [
+    "torch>=2.0.1",
+    "numpy",
+    "matplotlib",
+    "langdetect",
+    "deep_translator>=1.11.4",
+    "wordninja" ]
 
 [project.urls]
 Repository = "https://github.com/LevelPixel/ComfyUI-LevelPixel"
