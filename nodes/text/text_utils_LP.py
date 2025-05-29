@@ -181,16 +181,10 @@ class TextTranslateManualAll:
     def text_translate_manual_all(self, text, source_lang='auto', target_lang='en', translator='GoogleTranslator'):
         if text.strip():
             try:
-                if translator == 'MyMemoryTranslator':
-                    sentences = split_text(text, 499)
-                    translator = MyMemoryTranslator(source=source_lang, target=target_lang)                    
-                    texts = translator.translate_batch(sentences)
-                    text = join_text(texts)
-                else:
-                    sentences = split_text(text, 4999)
-                    translator = GoogleTranslator(source=source_lang, target=target_lang)
-                    texts = translator.translate_batch(sentences)
-                    text = join_text(texts)
+                sentences = split_text(text, 4999)
+                translator = GoogleTranslator(source=source_lang, target=target_lang)
+                texts = translator.translate_batch(sentences)
+                text = join_text(texts)
             except Exception as e:
                 print(f"Translation error: {e}")
         return (text,)
