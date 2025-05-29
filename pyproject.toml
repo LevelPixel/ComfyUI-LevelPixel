@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-levelpixel"
 description = "Main nodes of the Level Pixel company (aka levelpixel, LP). Includes convenient nodes for working with images from folders; counting files in a folder; cleaning memory; tag filters. Model Unloader, Free memory, Tag Filters, Tag Category Filters, Tag Choice Parser, File counter, Image Loader From Path (with counters), Google Translator, Language Translator, Override Device, Delay, Lora Tag Loader. Repository: https://github.com/LevelPixel/ComfyUI-LevelPixel"
-version = "1.2.3"
+version = "1.2.4"
 license = { file = "LICENSE" }
 dependencies = [
     "torch>=2.0.1",
