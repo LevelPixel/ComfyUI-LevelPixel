@@ -57,5 +57,6 @@
     "Text Replace [LP]":"Text Replace",
     "Pipe [LP]":"Pipe",
     "Pipe In [LP]":"Pipe In",
-    "Pipe Out [LP]":"Pipe Out"
+    "Pipe Out [LP]":"Pipe Out",
+    "Count Objects [LP]":"Count Objects - counts the number of objects that were fed to the input (this can be a list or one single object). Accepts any type of input."
 }

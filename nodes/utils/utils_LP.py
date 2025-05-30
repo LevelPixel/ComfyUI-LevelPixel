@@ -236,11 +236,37 @@ class Pipe:
        
         return (pipe, new_model, new_pos, new_neg, new_latent, new_vae, new_clip, new_controlnet, new_image, new_seed, new_any1, new_any2, new_any3, new_any4, new_any5,)
 
+class CountObjects:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "input": (any,),
+                "base_value": ("INT", {"default": 0, "min": 0}),
+            }
+        }
+
+    RETURN_TYPES = ("INT",)
+    INPUT_IS_LIST = True
+    FUNCTION = "count_objects"
+    CATEGORY = "LevelPixel/Image"
+
+    def count_objects(self, input, base_value):
+        if input is None:
+            count = 0
+        elif isinstance(input, list):
+            count = len(input)
+        else:
+            count = 1
+
+        return (base_value[0] + count,)
+
 NODE_CLASS_MAPPINGS = {
     "Delay|LP": Delay,
     "PipeOut|LP": PipeOut,
     "PipeIn|LP": PipeIn,
     "Pipe|LP": Pipe,
+    "CountObjects|LP": CountObjects
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -248,5 +274,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "PipeOut|LP": "Pipe Out [LP]",
     "PipeIn|LP": "Pipe In [LP]",
     "Pipe|LP": "Pipe [LP]",
+    "CountObjects|LP": "Count Objects [LP]"
 }
 

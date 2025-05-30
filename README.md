@@ -102,6 +102,7 @@ The core functionality is taken from [comfyui-mixlab-nodes](https://github.com/s
 There are a few more nodes in this package that have some unusual uses:
 
 * Google Translate
+* Count Objects - counts the number of objects that were fed to the input (this can be a list or one single object). Accepts any type of input.
 * Preview Image Bridge - only output an image to the screen if there is a connection to the output node. Useful in loops and conditions where the execution of this node is not required due to current conditions (variables).
 * Show Text Bridge - only output text to the screen if there is a connection to the output node. Useful in loops and conditions where the execution of this node is not required due to current conditions (variables).
 * Show Text - output text to the screen with mandatory execution. The node is executed in any case, whether the output is connected or not.
