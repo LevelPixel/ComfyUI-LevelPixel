@@ -121,11 +121,11 @@ Link to Level Pixel Advanced nodes with LLM nodes:\ [https://github.com/LevelPix
 
 27-05-2025 - The node package is divided into two independent packages - a package with logical nodes [ComfyUI-LevelPixel](https://github.com/LevelPixel/ComfyUI-LevelPixel) and a package with wrapper-nodes for neural models [ComfyUI-LevelPixel-Advanced](https://github.com/LevelPixel/ComfyUI-LevelPixel-Advanced)
 
+The license for this package has been changed from Apache 2.0 to GNU GPLv3
+
 # Credits
 
 ComfyUI/[ComfyUI](https://github.com/comfyanonymous/ComfyUI) - A powerful and modular stable diffusion GUI.
-
-VLM nodes for ComfyUI/[ComfyUI_VLM_nodes](https://github.com/gokayfem/ComfyUI_VLM_nodes) - Best VLM nodes for ComfyUI.
 
 Tag Filter nodes for ComfyUI/[comfyui_tag_fillter](https://github.com/sugarkwork/comfyui_tag_fillter) - Best tag filter by category nodes for ComfyUI.
 
@@ -137,4 +137,4 @@ Efficiency-nodes-comfyui/[efficiency-nodes-comfyui](https://github.com/jags111/e
 
 Copyright (c) 2024-present [Level Pixel](https://github.com/LevelPixel)
 
-Licensed under Apache-2.0 License
+Licensed under GNU GPLv3
