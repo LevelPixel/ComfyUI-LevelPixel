@@ -4,7 +4,7 @@
 
 The purpose of this package is to collect the most necessary and atomic nodes for working with any tasks, adapted for use in cycles and conditions. The package of nodes is aimed at those users who need all the basic things to create multitasking complex workflows using multimodal neural models and software solutions.
 
-*Our dream is to see object-oriented programming in ComfyUI. We will try to get closer to it.*
+*[Our dream is to see object-oriented programming in ComfyUI. We will try to get closer to it.](https://www.patreon.com/LevelPixel)*
 
 **In this Level Pixel node pack you will find:**
 Image Remove Background based on RemBG, Tag Category Filter nodes, Model Unloader nodes, File Counter, Image Loader From Path, Load Image, Fast Checker Pattern, Float Slider, Load LoRA Tag, Image Overlay, Conversion nodes.
@@ -15,7 +15,15 @@ Recommend that you install the advanced node package from Level Pixel Advanced f
 The official repository of the current node package is located at this link:\
 [https://github.com/LevelPixel/ComfyUI-LevelPixel](https://github.com/LevelPixel/ComfyUI-LevelPixel)
 
-## Contacts:
+**Like our nodes? Then we'd be happy to see your star on our GitHub repository!**
+
+## Contacts, services and support:
+
+Our official Patreon page:\
+[https://www.patreon.com/LevelPixel](https://www.patreon.com/LevelPixel)
+
+On Patreon you can get services from us on issues related to ComfyUI, Forge, programming and AI tools. 
+You can also support our project and support the development of our node packages.
 
 For cooperation, suggestions and ideas you can write to email:
 levelpixel.dev@gmail.com
