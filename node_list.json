@@ -51,7 +51,6 @@
     "Override CLIP Device [LP]":"Changes the main computing processor and the RAM used for CLIP. You can specify any video card or processor that is available in the system.",
     "Override VAE Device [LP]":"Changes the main computing processor and the RAM used for VAE. You can specify any video card or processor that is available in the system.",
     "Delay [LP]":"Delay",
-    "Autotagger [LP]":"Autotagger based on the latest version of the WD tagging model from SmilingWolf.",
     "Seed [LP]":"Seed",
     "String Cycler [LP]":"String Cycler",
     "Text Replace [LP]":"Text Replace",
