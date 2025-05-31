@@ -123,7 +123,8 @@ There are a few more nodes in this package that have some unusual uses:
 
 All LLM nodes have been moved to a separate ComfyUI Level Pixel Advanced node package, as such nodes require the skill of configuring programs, drivers and libraries for correct use, as well as due to constant changes and other frequent changes that may affect all other functionality of the current node package. In addition, some technologies based on neural networks tend to quickly become obsolete (currently in 1-2 years), so they will be in a separate ComfyUI Level Pixel Advanced package.
 
-Link to Level Pixel Advanced nodes with LLM nodes:\ [https://github.com/LevelPixel/ComfyUI-LevelPixel-Advanced](https://github.com/LevelPixel/ComfyUI-LevelPixel-Advanced)
+Link to Level Pixel Advanced nodes with LLM nodes:\ 
+[https://github.com/LevelPixel/ComfyUI-LevelPixel-Advanced](https://github.com/LevelPixel/ComfyUI-LevelPixel-Advanced)
 
 # Update History
 
