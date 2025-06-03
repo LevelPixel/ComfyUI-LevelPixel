@@ -142,6 +142,8 @@ Load LoRA Tag node for ComfyUI/[comfyui_lora_tag_loader](https://github.com/badj
 
 Efficiency-nodes-comfyui/[efficiency-nodes-comfyui](https://github.com/jags111/efficiency-nodes-comfyui) - Thanks for Image Overlay!
 
+ComfyUI-Inpaint-CropAndStitch/[ComfyUI-Inpaint-CropAndStitch](https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch) - Thanks for Inpaint Crop and Inpaint Stitch!
+
 ## License
 
 Copyright (c) 2024-present [Level Pixel](https://github.com/LevelPixel)
