@@ -518,7 +518,7 @@ class InpaintCrop:
                 # Custom Parameters
                 "preresize_parameters": ("PRERESIZEDATA", ),
                 "extend_factor_parameters": ("EXTENDFACTORDATA", ),
-                "cropped_image_target_size_parameters": ("TARGETSIZEDATA", ),
+                "cropped_size_parameters": ("CROPPEDSIZEDATA", ),
            }
         }
 
@@ -530,7 +530,7 @@ class InpaintCrop:
     RETURN_NAMES = ("crop_data", "cropped_image", "cropped_mask")
 
  
-    def inpaint_crop(self, image, downscale_algorithm, upscale_algorithm, mask_hipass_filter, mask_fill_holes, mask_expand_pixels, mask_invert, mask_blend_pixels, context_from_mask_extend_factor, output_padding, mask=None, optional_context_mask=None, preresize_parameters=None, extend_factor_parameters=None, cropped_image_target_size_parameters=None):
+    def inpaint_crop(self, image, downscale_algorithm, upscale_algorithm, mask_hipass_filter, mask_fill_holes, mask_expand_pixels, mask_invert, mask_blend_pixels, context_from_mask_extend_factor, output_padding, mask=None, optional_context_mask=None, preresize_parameters=None, extend_factor_parameters=None, cropped_size_parameters=None):
         
         if preresize_parameters is not None:
             preresize_mode, preresize_min_width, preresize_min_height, preresize_max_width, preresize_max_height = (
@@ -564,11 +564,11 @@ class InpaintCrop:
             extend_left_factor = 1.0
             extend_right_factor = 1.0
 
-        if cropped_image_target_size_parameters is not None:
+        if cropped_size_parameters is not None:
             target_width, target_height, aspect_ratio_limit = (
-                cropped_image_target_size_parameters["target_width"],
-                cropped_image_target_size_parameters["target_height"],
-                cropped_image_target_size_parameters["aspect_ratio_limit"]
+                cropped_size_parameters["target_width"],
+                cropped_size_parameters["target_height"],
+                cropped_size_parameters["aspect_ratio_limit"]
             )
             output_resize_to_target_size = True
         else:
@@ -836,7 +836,7 @@ class InpaintStitch:
         return (output_image,)
 
 
-def compute_target_size(width, height, target_resolution, aspect_ratio_limit=1.7):
+def compute_target_size(width, height, target_resolution, aspect_ratio_limit=2):
     ratio = max(1 / aspect_ratio_limit, min(width / height, aspect_ratio_limit))
     height_new = target_resolution * 2 / (ratio + 1)
     width_new = ratio * height_new
@@ -847,8 +847,8 @@ def compute_target_size(width, height, target_resolution, aspect_ratio_limit=1.7
 
     return target_size
 
-def calculate_target_size(image, mask, target_resolution, aspect_ratio_limit=1.7):
-    B, H, W, C = image.shape
+def calculate_target_size(mask, target_resolution, aspect_ratio_limit=2):
+    B, H, W = mask.shape
     mask = mask.round()
 
     for b in range(B):
@@ -868,7 +868,7 @@ def calculate_target_size(image, mask, target_resolution, aspect_ratio_limit=1.7
 
         return compute_target_size(width, height, target_resolution, aspect_ratio_limit)
 
-class CalculateTargetSize:
+class CalculateTargetSizeByMask:
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -876,8 +876,8 @@ class CalculateTargetSize:
             "required": {
                 "image": ("IMAGE", ),
                 "mask": ("MASK", ),
-                "target_size": ("INT", {"default": 1024, "min": 1, "max": nodes.MAX_RESOLUTION, "step": 1}),
-                "aspect_ratio_limit": ("FLOAT", {"default": 1.7, "min": 1, "max": 100, "step": 0.01}),
+                "target_size": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
+                "aspect_ratio_limit": ("FLOAT", {"default": 2, "min": 0, "max": 100, "step": 0.01}),
             },
         }
 
@@ -891,27 +891,59 @@ class CalculateTargetSize:
         
         return (target_height, target_width, )
     
-class CroppedImageTargetSizeParameters:
+class CroppedSizeAspectParameters:
 
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "image": ("IMAGE", ),
-                "mask": ("MASK", ),
-                "target_size": ("INT", {"default": 1024, "min": 1, "max": nodes.MAX_RESOLUTION, "step": 1}),
-                "aspect_ratio_limit": ("FLOAT", {"default": 1.7, "min": 1, "max": 100, "step": 0.01}),
+                "mask": ("MASK", ),                
+                "target_size": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
+                "aspect_ratio_limit": ("FLOAT", {"default": 2, "min": 1, "max": 100, "step": 0.01}),
+            },
+            "optional": {
+                "optional_context_mask": ("MASK", ),
+            }
+        }
+
+    RETURN_TYPES = ("CROPPEDSIZEDATA",)
+    RETURN_NAMES = ("target_size",)
+    FUNCTION = "cropped_size_parameters"
+    CATEGORY = "LevelPixel/Inpaint"
+    def cropped_size_parameters(self, mask, target_size=1024, aspect_ratio_limit=2, optional_context_mask=None):
+        if optional_context_mask is not None:
+            assert optional_context_mask.shape[1:] == mask.shape[1:3], f"optional_context_mask dimensions do not match mask dimensions. Expected {mask.shape[1:3]}, got {optional_context_mask.shape[1:]}"
+            context_mask = optional_context_mask.squeeze(-1)
+            mask = ((mask > 0) | (context_mask > 0)).float()        
+        target_size = calculate_target_size(mask, target_size, aspect_ratio_limit)
+        target_size["aspect_ratio_limit"] = aspect_ratio_limit
+
+        return (target_size, )
+    
+class CroppedSizeFixedParameters:
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "cropped_height": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
+                "cropped_width": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
             },
         }
 
-    RETURN_TYPES = ("TARGETSIZEDATA",)
+    RETURN_TYPES = ("CROPPEDSIZEDATA",)
     RETURN_NAMES = ("target_size",)
-    FUNCTION = "cropped_image_target_size_parameters"
+    FUNCTION = "cropped_size_fixed_parameters"
     CATEGORY = "LevelPixel/Inpaint"
-    def cropped_image_target_size_parameters(self, image, mask, target_size=1024, aspect_ratio_limit=2):
-        target_size = calculate_target_size(image, mask, target_size, aspect_ratio_limit)
-        target_size["aspect_ratio_limit"] = aspect_ratio_limit
-        print(target_size)
+    def cropped_size_fixed_parameters(self, cropped_height, cropped_width):        
+        target_height = cropped_height
+        target_width = cropped_width
+        aspect_ratio_limit = 1.0
+        target_size = {            
+            "target_height": target_height,
+            "target_width": target_width,
+            "aspect_ratio_limit": aspect_ratio_limit
+        }
         return (target_size, )
     
 class PreresizeParameters:
@@ -972,17 +1004,19 @@ class ExtendFactorParameters:
 NODE_CLASS_MAPPINGS = {
     "InpaintCrop|LP": InpaintCrop,
     "InpaintStitch|LP": InpaintStitch,
-    "CroppedImageTargetSizeParameters|LP": CroppedImageTargetSizeParameters,
+    "CroppedSizeAspectParameters|LP": CroppedSizeAspectParameters,
+    "CroppedSizeFixedParameters|LP": CroppedSizeFixedParameters,
     "ExtendFactorParameters|LP": ExtendFactorParameters,
     "PreresizeParameters|LP": PreresizeParameters,
-    "CalculateTargetSize|LP": CalculateTargetSize
+    "CalculateTargetSizeByMask|LP": CalculateTargetSizeByMask
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "InpaintCrop|LP": "Inpaint Crop [LP]",
     "InpaintStitch|LP": "Inpaint Stitch [LP]",
-    "CroppedImageTargetSizeParameters|LP": "Cropped Image Target Size Parameters [LP]",
+    "CroppedSizeAspectParameters|LP": "Cropped Size Aspect Parameters [LP]",
+    "CroppedSizeFixedParameters|LP": "Cropped Size Fixed Parameters [LP]",
     "ExtendFactorParameters|LP": "Extend Factor Parameters [LP]",
     "PreresizeParameters|LP": "Preresize Parameters [LP]",
-    "CalculateTargetSize|LP": "Calculate Target Size [LP]"
+    "CalculateTargetSizeByMask|LP": "Calculate Target Size By Mask [LP]"
 }
