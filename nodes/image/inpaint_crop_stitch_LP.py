@@ -3,10 +3,9 @@ import math
 import nodes
 import numpy as np
 import torch
+from scipy.ndimage import gaussian_filter, grey_dilation, binary_closing, binary_fill_holes
 import torchvision.transforms.functional as F
 from PIL import Image
-from scipy.ndimage import gaussian_filter, grey_dilation, binary_closing, binary_fill_holes
-
 
 def rescale_i(samples, width, height, algorithm: str):
     samples = samples.movedim(-1, 1)
@@ -25,83 +24,37 @@ def rescale_m(samples, width, height, algorithm: str):
     samples = samples.squeeze(1)
     return samples
 
+def compute_target_size(width, height, target_resolution, aspect_ratio_limit=2):
+    ratio = max(1 / aspect_ratio_limit, min(width / height, aspect_ratio_limit))
+    height_new = target_resolution * 2 / (ratio + 1)
+    width_new = ratio * height_new
+    target_size = {
+            "target_height": int(round(height_new)),
+            "target_width": int(round(width_new)),
+        }
 
-def preresize_imm(image, mask, optional_context_mask, downscale_algorithm, upscale_algorithm, preresize_mode, preresize_min_width, preresize_min_height, preresize_max_width, preresize_max_height):
-    current_width, current_height = image.shape[2], image.shape[1]  # Image size [batch, height, width, channels]
-    
-    if preresize_mode == "ensure minimum resolution":
-        if current_width >= preresize_min_width and current_height >= preresize_min_height:
-            return image, mask, optional_context_mask
+    return target_size
 
-        scale_factor_min_width = preresize_min_width / current_width
-        scale_factor_min_height = preresize_min_height / current_height
+def calculate_target_size(mask, target_resolution, aspect_ratio_limit=2):
+    B, H, W = mask.shape
+    mask = mask.round()
 
-        scale_factor = max(scale_factor_min_width, scale_factor_min_height)
+    for b in range(B):
+        rows = torch.any(mask[min(b, mask.shape[0]-1)] > 0, dim=1)
+        cols = torch.any(mask[min(b, mask.shape[0]-1)] > 0, dim=0)
 
-        target_width = int(current_width * scale_factor)
-        target_height = int(current_height * scale_factor)
+        row_indices = torch.where(rows)[0]
+        col_indices = torch.where(cols)[0]
 
-        image = rescale_i(image, target_width, target_height, upscale_algorithm)
-        mask = rescale_m(mask, target_width, target_height, 'bilinear')
-        optional_context_mask = rescale_m(optional_context_mask, target_width, target_height, 'bilinear')
-        
-        assert target_width >= preresize_min_width and target_height >= preresize_min_height, \
-            f"Internal error: After resizing, target size {target_width}x{target_height} is smaller than min size {preresize_min_width}x{preresize_min_height}"
+        if row_indices.numel() == 0 or col_indices.numel() == 0:
+            width, height = W, H
+        else:
+            y_min, y_max = row_indices[[0, -1]]
+            x_min, x_max = col_indices[[0, -1]]
+            width = (x_max - x_min + 1).item()
+            height = (y_max - y_min + 1).item()
 
-    elif preresize_mode == "ensure minimum and maximum resolution":
-        if preresize_min_width <= current_width <= preresize_max_width and preresize_min_height <= current_height <= preresize_max_height:
-            return image, mask, optional_context_mask
-
-        scale_factor_min_width = preresize_min_width / current_width
-        scale_factor_min_height = preresize_min_height / current_height
-        scale_factor_min = max(scale_factor_min_width, scale_factor_min_height)
-
-        scale_factor_max_width = preresize_max_width / current_width
-        scale_factor_max_height = preresize_max_height / current_height
-        scale_factor_max = min(scale_factor_max_width, scale_factor_max_height)
-
-        if scale_factor_min > 1 and scale_factor_max < 1:
-            assert False, "Cannot meet both minimum and maximum resolution requirements with aspect ratio preservation."
-        
-        if scale_factor_min > 1:  # We're upscaling to meet min resolution
-            scale_factor = scale_factor_min
-            rescale_algorithm = upscale_algorithm  # Use upscale algorithm for min resolution
-        else:  # We're downscaling to meet max resolution
-            scale_factor = scale_factor_max
-            rescale_algorithm = downscale_algorithm  # Use downscale algorithm for max resolution
-
-        target_width = int(current_width * scale_factor)
-        target_height = int(current_height * scale_factor)
-
-        image = rescale_i(image, target_width, target_height, rescale_algorithm)
-        mask = rescale_m(mask, target_width, target_height, 'nearest') # Always nearest for efficiency
-        optional_context_mask = rescale_m(optional_context_mask, target_width, target_height, 'nearest') # Always nearest for efficiency
-        
-        assert preresize_min_width <= target_width <= preresize_max_width, \
-            f"Internal error: Target width {target_width} is outside the range {preresize_min_width} - {preresize_max_width}"
-        assert preresize_min_height <= target_height <= preresize_max_height, \
-            f"Internal error: Target height {target_height} is outside the range {preresize_min_height} - {preresize_max_height}"
-
-    elif preresize_mode == "ensure maximum resolution":
-        if current_width <= preresize_max_width and current_height <= preresize_max_height:
-            return image, mask, optional_context_mask
-
-        scale_factor_max_width = preresize_max_width / current_width
-        scale_factor_max_height = preresize_max_height / current_height
-        scale_factor_max = min(scale_factor_max_width, scale_factor_max_height)
-
-        target_width = int(current_width * scale_factor_max)
-        target_height = int(current_height * scale_factor_max)
-
-        image = rescale_i(image, target_width, target_height, downscale_algorithm)
-        mask = rescale_m(mask, target_width, target_height, 'nearest')  # Always nearest for efficiency
-        optional_context_mask = rescale_m(optional_context_mask, target_width, target_height, 'nearest')  # Always nearest for efficiency
-
-        assert target_width <= preresize_max_width and target_height <= preresize_max_height, \
-            f"Internal error: Target size {target_width}x{target_height} is greater than max size {preresize_max_width}x{preresize_max_height}"
-
-    return image, mask, optional_context_mask
-
+        return compute_target_size(width, height, target_resolution, aspect_ratio_limit)
 
 def fillholes_iterative_hipass_fill_m(samples):
     thresholds = [1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
@@ -484,10 +437,8 @@ class InpaintCrop:
 
     ComfyUI-Inpaint-CropAndStitch
     https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch
-
-    This node stitches the inpainted image without altering unmasked areas.
     """
-        
+
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -509,6 +460,13 @@ class InpaintCrop:
                 # Context
                 "context_from_mask_extend_factor": ("FLOAT", {"default": 1.2, "min": 1.0, "max": 100.0, "step": 0.01, "tooltip": "Grow the context area from the mask by a certain factor in every direction. For example, 1.5 grabs extra 50% up, down, left, and right as context."}),
                 "output_padding": (["0", "8", "16", "32", "64", "128", "256", "512"], {"default": "32"}),
+
+                # Output cropped image size
+                "mode": (["none", "input size parameters", "forced size", "aspect size"], {"default": "aspect size"}),
+                "target_size": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
+                "aspect_ratio_limit": ("FLOAT", {"default": 2, "min": 1, "max": 100, "step": 0.01}),
+                "force_width": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
+                "force_height": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1})             
            },
            "optional": {
                 # Optional inputs
@@ -516,7 +474,6 @@ class InpaintCrop:
                 "optional_context_mask": ("MASK",),
 
                 # Custom Parameters
-                "preresize_parameters": ("PRERESIZEDATA", ),
                 "extend_factor_parameters": ("EXTENDFACTORDATA", ),
                 "cropped_size_parameters": ("CROPPEDSIZEDATA", ),
            }
@@ -528,27 +485,45 @@ class InpaintCrop:
 
     RETURN_TYPES = ("CROPDATA", "IMAGE", "MASK")
     RETURN_NAMES = ("crop_data", "cropped_image", "cropped_mask")
-
  
-    def inpaint_crop(self, image, downscale_algorithm, upscale_algorithm, mask_hipass_filter, mask_fill_holes, mask_expand_pixels, mask_invert, mask_blend_pixels, context_from_mask_extend_factor, output_padding, mask=None, optional_context_mask=None, preresize_parameters=None, extend_factor_parameters=None, cropped_size_parameters=None):
-        
-        if preresize_parameters is not None:
-            preresize_mode, preresize_min_width, preresize_min_height, preresize_max_width, preresize_max_height = (
-                preresize_parameters["preresize_mode"],
-                preresize_parameters["preresize_min_width"],
-                preresize_parameters["preresize_min_height"],
-                preresize_parameters["preresize_max_width"],
-                preresize_parameters["preresize_max_height"]
-            )
-            preresize = True
+    def inpaint_crop(self, image, downscale_algorithm, upscale_algorithm, mask_hipass_filter, mask_fill_holes, mask_expand_pixels, mask_invert, mask_blend_pixels, context_from_mask_extend_factor, output_padding, mode, target_size, aspect_ratio_limit, force_width, force_height, mask=None, optional_context_mask=None, extend_factor_parameters=None, cropped_size_parameters=None):
+        if mode == "input size parameters":
+            if cropped_size_parameters is not None:
+                target_width, target_height, batch_mode = (
+                    cropped_size_parameters["target_width"],
+                    cropped_size_parameters["target_height"],
+                    cropped_size_parameters["batch_mode"]
+                )
+                output_resize_to_target_size = True
+            else:
+                output_resize_to_target_size = False
+                target_width = None
+                target_height = None
+                batch_mode = False
+        elif mode == "forced size":
+            output_resize_to_target_size = True
+            target_width = force_width
+            target_height = force_height
+            batch_mode = True
+        elif mode == "aspect size":
+            output_resize_to_target_size = True
+            new_mask = mask
+            if optional_context_mask is not None:
+                assert optional_context_mask.shape[1:] == new_mask.shape[1:3], f"optional_context_mask dimensions do not match mask dimensions. Expected {new_mask.shape[1:3]}, got {optional_context_mask.shape[1:]}"
+                context_mask = optional_context_mask.squeeze(-1)
+                new_mask = ((new_mask > 0) | (context_mask > 0)).float()     
+            aspect_target_size = calculate_target_size(new_mask, target_size, aspect_ratio_limit)
+            target_width, target_height = (
+                    aspect_target_size["target_width"],
+                    aspect_target_size["target_height"]
+                )
+            batch_mode = False
         else:
-            preresize = False
-            preresize_mode = None
-            preresize_min_width = None
-            preresize_min_height = None
-            preresize_max_width = None
-            preresize_max_height = None            
-        
+            output_resize_to_target_size = False
+            target_width = None
+            target_height = None
+            batch_mode = False
+
         if extend_factor_parameters is not None:
             extend_up_factor, extend_down_factor, extend_left_factor, extend_right_factor = (
                 extend_factor_parameters["extend_up_factor"],
@@ -564,19 +539,6 @@ class InpaintCrop:
             extend_left_factor = 1.0
             extend_right_factor = 1.0
 
-        if cropped_size_parameters is not None:
-            target_width, target_height, aspect_ratio_limit = (
-                cropped_size_parameters["target_width"],
-                cropped_size_parameters["target_height"],
-                cropped_size_parameters["aspect_ratio_limit"]
-            )
-            output_resize_to_target_size = True
-        else:
-            output_resize_to_target_size = False
-            target_width = None
-            target_height = None
-            aspect_ratio_limit = None
-                
         image = image.clone()
         if mask is not None:
             mask = mask.clone()
@@ -584,15 +546,12 @@ class InpaintCrop:
             optional_context_mask = optional_context_mask.clone()
 
         output_padding = int(output_padding)
-        
-        # Check that some parameters make sense
-        if preresize and preresize_mode == "ensure minimum and maximum resolution":
-            assert preresize_max_width >= preresize_min_width, "Preresize maximum width must be greater than or equal to minimum width"
-            assert preresize_max_height >= preresize_min_height, "Preresize maximum height must be greater than or equal to minimum height"
+
+        print("target_width: ", target_width)
+        print("target_height: ", target_height)
 
         if image.shape[0] > 1:
-            assert output_resize_to_target_size, "cropped_image_target_size_parameters must be enabled when input is a batch of images, given all images in the batch output have to be the same size"
-            assert aspect_ratio_limit == 1, "aspect_ratio_limit must be equal to 1 when processing a batch of images"
+            assert batch_mode, "for batch of images use Inpaint Crop only with Cropped Forsed Size Parameters node or with Forsed mode, given all images in the batch output have to be the same size"
 
         # When a LoadImage node passes a mask without user editing, it may be the wrong shape.
         # Detect and fix that to avoid shape mismatch errors.
@@ -665,10 +624,9 @@ class InpaintCrop:
             one_optional_context_mask = optional_context_mask[b].unsqueeze(0)
 
             outputs = self.inpaint_crop_single_image(
-                one_image, downscale_algorithm, upscale_algorithm, preresize, preresize_mode,
-                preresize_min_width, preresize_min_height, preresize_max_width, preresize_max_height,
-                extend_for_outpainting, extend_up_factor, extend_down_factor, extend_left_factor, extend_right_factor,
-                mask_hipass_filter, mask_fill_holes, mask_expand_pixels, mask_invert, mask_blend_pixels,
+                one_image, downscale_algorithm, upscale_algorithm, extend_for_outpainting, extend_up_factor, 
+                extend_down_factor, extend_left_factor, extend_right_factor,mask_hipass_filter, 
+                mask_fill_holes, mask_expand_pixels, mask_invert, mask_blend_pixels,
                 context_from_mask_extend_factor, output_resize_to_target_size, target_width, target_height,
                 output_padding, one_mask, one_optional_context_mask)
 
@@ -687,10 +645,7 @@ class InpaintCrop:
         return result_stitcher, result_image, result_mask,
 
 
-    def inpaint_crop_single_image(self, image, downscale_algorithm, upscale_algorithm, preresize, preresize_mode, preresize_min_width, preresize_min_height, preresize_max_width, preresize_max_height, extend_for_outpainting, extend_up_factor, extend_down_factor, extend_left_factor, extend_right_factor, mask_hipass_filter, mask_fill_holes, mask_expand_pixels, mask_invert, mask_blend_pixels, context_from_mask_extend_factor, output_resize_to_target_size, output_target_width, output_target_height, output_padding, mask, optional_context_mask):
-        if preresize:
-            image, mask, optional_context_mask = preresize_imm(image, mask, optional_context_mask, downscale_algorithm, upscale_algorithm, preresize_mode, preresize_min_width, preresize_min_height, preresize_max_width, preresize_max_height)
-       
+    def inpaint_crop_single_image(self, image, downscale_algorithm, upscale_algorithm, extend_for_outpainting, extend_up_factor, extend_down_factor, extend_left_factor, extend_right_factor, mask_hipass_filter, mask_fill_holes, mask_expand_pixels, mask_invert, mask_blend_pixels, context_from_mask_extend_factor, output_resize_to_target_size, output_target_width, output_target_height, output_padding, mask, optional_context_mask):
         if mask_fill_holes:
            mask = fillholes_iterative_hipass_fill_m(mask)
 
@@ -756,7 +711,6 @@ class InpaintCrop:
         return stitcher, cropped_image, cropped_mask
 
 
-
 class InpaintStitch:
     """
     ComfyUI-LevelPixel
@@ -784,7 +738,6 @@ class InpaintStitch:
 
     FUNCTION = "inpaint_stitch"
 
-
     def inpaint_stitch(self, crop_data, inpainted_image):
         inpainted_image = inpainted_image.clone()
         results = []
@@ -800,7 +753,7 @@ class InpaintStitch:
             for key in ['downscale_algorithm', 'upscale_algorithm', 'blend_pixels']:
                 one_stitcher[key] = crop_data[key]
             for key in ['canvas_to_orig_x', 'canvas_to_orig_y', 'canvas_to_orig_w', 'canvas_to_orig_h', 'canvas_image', 'cropped_to_canvas_x', 'cropped_to_canvas_y', 'cropped_to_canvas_w', 'cropped_to_canvas_h', 'cropped_mask_for_blend']:
-                if override: # One stitcher for many images, always read 0.
+                if override:
                     one_stitcher[key] = crop_data[key][0]
                 else:
                     one_stitcher[key] = crop_data[key][b]
@@ -829,150 +782,12 @@ class InpaintStitch:
         cto_w = stitcher['canvas_to_orig_w']
         cto_h = stitcher['canvas_to_orig_h']
 
-        mask = stitcher['cropped_mask_for_blend']  # shape: [1, H, W]
+        mask = stitcher['cropped_mask_for_blend']
 
         output_image = stitch_magic_im(canvas_image, inpainted_image, mask, ctc_x, ctc_y, ctc_w, ctc_h, cto_x, cto_y, cto_w, cto_h, downscale_algorithm, upscale_algorithm)
 
         return (output_image,)
 
-
-def compute_target_size(width, height, target_resolution, aspect_ratio_limit=2):
-    ratio = max(1 / aspect_ratio_limit, min(width / height, aspect_ratio_limit))
-    height_new = target_resolution * 2 / (ratio + 1)
-    width_new = ratio * height_new
-    target_size = {
-            "target_height": int(round(height_new)),
-            "target_width": int(round(width_new)),
-        }
-
-    return target_size
-
-def calculate_target_size(mask, target_resolution, aspect_ratio_limit=2):
-    B, H, W = mask.shape
-    mask = mask.round()
-
-    for b in range(B):
-        rows = torch.any(mask[min(b, mask.shape[0]-1)] > 0, dim=1)
-        cols = torch.any(mask[min(b, mask.shape[0]-1)] > 0, dim=0)
-
-        row_indices = torch.where(rows)[0]
-        col_indices = torch.where(cols)[0]
-
-        if row_indices.numel() == 0 or col_indices.numel() == 0:
-            width, height = W, H
-        else:
-            y_min, y_max = row_indices[[0, -1]]
-            x_min, x_max = col_indices[[0, -1]]
-            width = (x_max - x_min + 1).item()
-            height = (y_max - y_min + 1).item()
-
-        return compute_target_size(width, height, target_resolution, aspect_ratio_limit)
-
-class CalculateTargetSizeByMask:
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "image": ("IMAGE", ),
-                "mask": ("MASK", ),
-                "target_size": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
-                "aspect_ratio_limit": ("FLOAT", {"default": 2, "min": 0, "max": 100, "step": 0.01}),
-            },
-        }
-
-    RETURN_TYPES = ("INT", "INT",)
-    RETURN_NAMES = ("height", "width",)
-    FUNCTION = "calculate_target_size"
-    CATEGORY = "LevelPixel/Inpaint"
-    def calculate_target_size(self, image, mask, target_size=1024, aspect_ratio_limit=2):
-        target_size = calculate_target_size(image, mask, target_size, aspect_ratio_limit)
-        target_height, target_width = (target_size["target_height"], target_size["target_width"])
-        
-        return (target_height, target_width, )
-    
-class CroppedSizeAspectParameters:
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "mask": ("MASK", ),                
-                "target_size": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
-                "aspect_ratio_limit": ("FLOAT", {"default": 2, "min": 1, "max": 100, "step": 0.01}),
-            },
-            "optional": {
-                "optional_context_mask": ("MASK", ),
-            }
-        }
-
-    RETURN_TYPES = ("CROPPEDSIZEDATA",)
-    RETURN_NAMES = ("target_size",)
-    FUNCTION = "cropped_size_parameters"
-    CATEGORY = "LevelPixel/Inpaint"
-    def cropped_size_parameters(self, mask, target_size=1024, aspect_ratio_limit=2, optional_context_mask=None):
-        if optional_context_mask is not None:
-            assert optional_context_mask.shape[1:] == mask.shape[1:3], f"optional_context_mask dimensions do not match mask dimensions. Expected {mask.shape[1:3]}, got {optional_context_mask.shape[1:]}"
-            context_mask = optional_context_mask.squeeze(-1)
-            mask = ((mask > 0) | (context_mask > 0)).float()        
-        target_size = calculate_target_size(mask, target_size, aspect_ratio_limit)
-        target_size["aspect_ratio_limit"] = aspect_ratio_limit
-
-        return (target_size, )
-    
-class CroppedSizeFixedParameters:
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cropped_height": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
-                "cropped_width": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
-            },
-        }
-
-    RETURN_TYPES = ("CROPPEDSIZEDATA",)
-    RETURN_NAMES = ("target_size",)
-    FUNCTION = "cropped_size_fixed_parameters"
-    CATEGORY = "LevelPixel/Inpaint"
-    def cropped_size_fixed_parameters(self, cropped_height, cropped_width):        
-        target_height = cropped_height
-        target_width = cropped_width
-        aspect_ratio_limit = 1.0
-        target_size = {            
-            "target_height": target_height,
-            "target_width": target_width,
-            "aspect_ratio_limit": aspect_ratio_limit
-        }
-        return (target_size, )
-    
-class PreresizeParameters:
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "preresize_mode": (["ensure minimum resolution", "ensure maximum resolution", "ensure minimum and maximum resolution"], {"default": "ensure minimum resolution"}),
-                "preresize_min_width": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
-                "preresize_min_height": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
-                "preresize_max_width": ("INT", {"default": nodes.MAX_RESOLUTION, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
-                "preresize_max_height": ("INT", {"default": nodes.MAX_RESOLUTION, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
-            },
-        }
-
-    RETURN_TYPES = ("PRERESIZEDATA",)
-    RETURN_NAMES = ("preresize_data",)
-    FUNCTION = "preresize_parameters"
-    CATEGORY = "LevelPixel/Inpaint"
-    def preresize_parameters(self, preresize_mode, preresize_min_width, preresize_min_height, preresize_max_width, preresize_max_height):
-        preresize_data = {
-            "preresize_mode": preresize_mode,
-            "preresize_min_width": preresize_min_width,
-            "preresize_min_height": preresize_min_height,
-            "preresize_max_width": preresize_max_width,
-            "preresize_max_height": preresize_max_height
-        }        
-        return (preresize_data, )
 
 class ExtendFactorParameters:
 
@@ -1001,22 +816,171 @@ class ExtendFactorParameters:
         return (extend_factor_data, )
 
 
+class CroppedAspectSizeParameters:
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mask": ("MASK", ),
+                "target_size": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
+                "aspect_ratio_limit": ("FLOAT", {"default": 2, "min": 1, "max": 100, "step": 0.01}),
+            },
+            "optional": {
+                "optional_context_mask": ("MASK", ),
+            }
+        }
+
+    RETURN_TYPES = ("CROPPEDSIZEDATA",)
+    RETURN_NAMES = ("target_size",)
+    FUNCTION = "cropped_aspect_size_parameters"
+    CATEGORY = "LevelPixel/Inpaint"
+    def cropped_aspect_size_parameters(self, mask, target_size=1024, aspect_ratio_limit=2, optional_context_mask=None):
+        if optional_context_mask is not None:
+            assert optional_context_mask.shape[1:] == mask.shape[1:3], f"optional_context_mask dimensions do not match mask dimensions. Expected {mask.shape[1:3]}, got {optional_context_mask.shape[1:]}"
+            context_mask = optional_context_mask.squeeze(-1)
+            mask = ((mask > 0) | (context_mask > 0)).float()        
+        target_size = calculate_target_size(mask, target_size, aspect_ratio_limit)
+        target_size["batch_mode"] = False
+
+        return (target_size, )
+
+
+class CroppedForsedSizeParameters:
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "cropped_height": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
+                "cropped_width": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
+            },
+        }
+
+    RETURN_TYPES = ("CROPPEDSIZEDATA",)
+    RETURN_NAMES = ("target_size",)
+    FUNCTION = "cropped_forsed_size_parameters"
+    CATEGORY = "LevelPixel/Inpaint"
+    def cropped_forsed_size_parameters(self, cropped_height, cropped_width):        
+        target_height = cropped_height
+        target_width = cropped_width
+        target_size = {            
+            "target_height": target_height,
+            "target_width": target_width,
+            "batch_mode": True
+        }
+        return (target_size, )
+
+
+class CroppedRangedSizeParameters:
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mask": ("MASK", ),
+                "min_width": ("INT", {"default": 832, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
+                "min_height": ("INT", {"default": 832, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
+                "max_width": ("INT", {"default": 1216, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
+                "max_height": ("INT", {"default": 1216, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1})
+            },
+            "optional": {
+                "optional_context_mask": ("MASK", ),
+            }
+        }
+
+    RETURN_TYPES = ("CROPPEDSIZEDATA",)
+    RETURN_NAMES = ("target_size",)
+    FUNCTION = "cropped_ranged_size_parameters"
+    CATEGORY = "LevelPixel/Inpaint"
+    def cropped_ranged_size_parameters(self, mask, min_width, min_height, max_width, max_height, optional_context_mask=None):
+        assert max_width >= min_width, "max_width must be greater than or equal to min_width"
+        assert max_height >= min_height, "max_height must be greater than or equal to min_height"
+
+        if optional_context_mask is not None:
+            assert optional_context_mask.shape[1:] == mask.shape[1:3], f"optional_context_mask dimensions do not match mask dimensions. Expected {mask.shape[1:3]}, got {optional_context_mask.shape[1:]}"
+            context_mask = optional_context_mask.squeeze(-1)
+            mask = ((mask > 0) | (context_mask > 0)).float()  
+
+        mask_height = mask.shape[1]
+        mask_width = mask.shape[2]
+
+        scale_w_min = min_width / mask_width
+        scale_h_min = min_height / mask_height
+        scale_w_max = max_width / mask_width
+        scale_h_max = max_height / mask_height
+
+        scale_w = (scale_w_min + scale_w_max) / 2
+        scale_h = (scale_h_min + scale_h_max) / 2
+
+        scale_w = min(scale_w_max, max(scale_w_min, scale_w))
+        scale_h = min(scale_h_max, max(scale_h_min, scale_h))
+
+        new_width = int(mask_width * scale_w)
+        new_height = int(mask_height * scale_h)
+
+        target_size = {            
+            "target_height": new_height,
+            "target_width": new_width,
+            "batch_mode": False
+        }
+        return (target_size, )
+
+
+class CroppedFreeSizeParameters:
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mask": ("MASK", ),
+                "rescale_factor": ("FLOAT", {"default": 1.00, "min": 0.01, "max": 100.0, "step": 0.01})
+            },
+            "optional": {
+                "optional_context_mask": ("MASK", ),
+            }
+        }
+
+    RETURN_TYPES = ("CROPPEDSIZEDATA",)
+    RETURN_NAMES = ("target_size",)
+    FUNCTION = "cropped_free_size_parameters"
+    CATEGORY = "LevelPixel/Inpaint"
+    def cropped_free_size_parameters(self, mask, rescale_factor, optional_context_mask=None):
+
+        print("mask shape: ", mask.shape)
+        if optional_context_mask is not None:
+            print("optional_context_mask shape: ", optional_context_mask.shape)
+            assert optional_context_mask.shape[1:] == mask.shape[1:3], f"optional_context_mask dimensions do not match mask dimensions. Expected {mask.shape[1:3]}, got {optional_context_mask.shape[1:]}"
+            context_mask = optional_context_mask.squeeze(-1)
+            mask = ((mask > 0) | (context_mask > 0)).float()  
+
+        print("new mask shape: ", mask.shape)
+        height = int(mask.shape[1] * rescale_factor)
+        width = int(mask.shape[2] * rescale_factor)
+
+        target_size = {            
+            "target_height": height,
+            "target_width": width,
+            "batch_mode": False
+        }
+        return (target_size, )
+
 NODE_CLASS_MAPPINGS = {
     "InpaintCrop|LP": InpaintCrop,
     "InpaintStitch|LP": InpaintStitch,
-    "CroppedSizeAspectParameters|LP": CroppedSizeAspectParameters,
-    "CroppedSizeFixedParameters|LP": CroppedSizeFixedParameters,
     "ExtendFactorParameters|LP": ExtendFactorParameters,
-    "PreresizeParameters|LP": PreresizeParameters,
-    "CalculateTargetSizeByMask|LP": CalculateTargetSizeByMask
+    "CroppedAspectSizeParameters|LP": CroppedAspectSizeParameters,
+    "CroppedForsedSizeParameters|LP": CroppedForsedSizeParameters,
+    "CroppedRangedSizeParameters|LP": CroppedRangedSizeParameters,
+    "CroppedFreeSizeParameters|LP": CroppedFreeSizeParameters
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "InpaintCrop|LP": "Inpaint Crop [LP]",
     "InpaintStitch|LP": "Inpaint Stitch [LP]",
-    "CroppedSizeAspectParameters|LP": "Cropped Size Aspect Parameters [LP]",
-    "CroppedSizeFixedParameters|LP": "Cropped Size Fixed Parameters [LP]",
     "ExtendFactorParameters|LP": "Extend Factor Parameters [LP]",
-    "PreresizeParameters|LP": "Preresize Parameters [LP]",
-    "CalculateTargetSizeByMask|LP": "Calculate Target Size By Mask [LP]"
+    "CroppedAspectSizeParameters|LP": "Cropped Aspect Size Parameters [LP]",
+    "CroppedForsedSizeParameters|LP": "Cropped Forsed Size Parameters [LP]",
+    "CroppedRangedSizeParameters|LP": "Cropped Ranged Size Parameters [LP]",
+    "CroppedFreeSizeParameters|LP": "Cropped Free Size Parameters [LP]"
 }

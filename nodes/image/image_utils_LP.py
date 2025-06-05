@@ -1,11 +1,12 @@
+import comfy.utils
 import numpy as np
 import io
 import torch
-from PIL import Image, ImageOps
+import nodes
 import matplotlib.pyplot as plt
-import comfy.utils
+import torchvision.transforms.functional as F
+from PIL import Image, ImageOps
 
-    
 color_mapping = {
     "white": (255, 255, 255),
     "black": (0, 0, 0),
@@ -53,6 +54,158 @@ def hex_to_rgb(hex_color):
     g = int(hex_color[2:4], 16)
     b = int(hex_color[4:6], 16)
     return (r, g, b) 
+
+def tensor2pil(image):
+    return Image.fromarray(np.clip(255. * image.cpu().numpy().squeeze(), 0, 255).astype(np.uint8))
+
+def rescale_i(samples, width, height, algorithm: str):
+    samples = samples.movedim(-1, 1)
+    algorithm = getattr(Image, algorithm.upper())  # i.e. Image.BICUBIC
+    samples_pil: Image.Image = F.to_pil_image(samples[0].cpu()).resize((width, height), algorithm)
+    samples = F.to_tensor(samples_pil).unsqueeze(0)
+    samples = samples.movedim(1, -1)
+    return samples
+
+
+def rescale_m(samples, width, height, algorithm: str):
+    samples = samples.unsqueeze(1)
+    algorithm = getattr(Image, algorithm.upper())  # i.e. Image.BICUBIC
+    samples_pil: Image.Image = F.to_pil_image(samples[0].cpu()).resize((width, height), algorithm)
+    samples = F.to_tensor(samples_pil).unsqueeze(0)
+    samples = samples.squeeze(1)
+    return samples
+
+
+def preresize_imm(image, mask, optional_context_mask, downscale_algorithm, upscale_algorithm, preresize_mode, preresize_min_width, preresize_min_height, preresize_max_width, preresize_max_height):
+    current_width, current_height = image.shape[2], image.shape[1]  # Image size [batch, height, width, channels]
+    
+    if preresize_mode == "ensure minimum resolution":
+        if current_width >= preresize_min_width and current_height >= preresize_min_height:
+            return image, mask, optional_context_mask
+
+        scale_factor_min_width = preresize_min_width / current_width
+        scale_factor_min_height = preresize_min_height / current_height
+
+        scale_factor = max(scale_factor_min_width, scale_factor_min_height)
+
+        target_width = int(current_width * scale_factor)
+        target_height = int(current_height * scale_factor)
+
+        image = rescale_i(image, target_width, target_height, upscale_algorithm)
+        mask = rescale_m(mask, target_width, target_height, 'bilinear')
+        optional_context_mask = rescale_m(optional_context_mask, target_width, target_height, 'bilinear')
+        
+        assert target_width >= preresize_min_width and target_height >= preresize_min_height, \
+            f"Internal error: After resizing, target size {target_width}x{target_height} is smaller than min size {preresize_min_width}x{preresize_min_height}"
+
+    elif preresize_mode == "ensure minimum and maximum resolution":
+        if preresize_min_width <= current_width <= preresize_max_width and preresize_min_height <= current_height <= preresize_max_height:
+            return image, mask, optional_context_mask
+
+        scale_factor_min_width = preresize_min_width / current_width
+        scale_factor_min_height = preresize_min_height / current_height
+        scale_factor_min = max(scale_factor_min_width, scale_factor_min_height)
+
+        scale_factor_max_width = preresize_max_width / current_width
+        scale_factor_max_height = preresize_max_height / current_height
+        scale_factor_max = min(scale_factor_max_width, scale_factor_max_height)
+
+        if scale_factor_min > 1 and scale_factor_max < 1:
+            assert False, "Cannot meet both minimum and maximum resolution requirements with aspect ratio preservation."
+        
+        if scale_factor_min > 1:  # We're upscaling to meet min resolution
+            scale_factor = scale_factor_min
+            rescale_algorithm = upscale_algorithm  # Use upscale algorithm for min resolution
+        else:  # We're downscaling to meet max resolution
+            scale_factor = scale_factor_max
+            rescale_algorithm = downscale_algorithm  # Use downscale algorithm for max resolution
+
+        target_width = int(current_width * scale_factor)
+        target_height = int(current_height * scale_factor)
+
+        image = rescale_i(image, target_width, target_height, rescale_algorithm)
+        mask = rescale_m(mask, target_width, target_height, 'nearest') # Always nearest for efficiency
+        optional_context_mask = rescale_m(optional_context_mask, target_width, target_height, 'nearest') # Always nearest for efficiency
+        
+        assert preresize_min_width <= target_width <= preresize_max_width, \
+            f"Internal error: Target width {target_width} is outside the range {preresize_min_width} - {preresize_max_width}"
+        assert preresize_min_height <= target_height <= preresize_max_height, \
+            f"Internal error: Target height {target_height} is outside the range {preresize_min_height} - {preresize_max_height}"
+
+    elif preresize_mode == "ensure maximum resolution":
+        if current_width <= preresize_max_width and current_height <= preresize_max_height:
+            return image, mask, optional_context_mask
+
+        scale_factor_max_width = preresize_max_width / current_width
+        scale_factor_max_height = preresize_max_height / current_height
+        scale_factor_max = min(scale_factor_max_width, scale_factor_max_height)
+
+        target_width = int(current_width * scale_factor_max)
+        target_height = int(current_height * scale_factor_max)
+
+        image = rescale_i(image, target_width, target_height, downscale_algorithm)
+        mask = rescale_m(mask, target_width, target_height, 'nearest')  # Always nearest for efficiency
+        optional_context_mask = rescale_m(optional_context_mask, target_width, target_height, 'nearest')  # Always nearest for efficiency
+
+        assert target_width <= preresize_max_width and target_height <= preresize_max_height, \
+            f"Internal error: Target size {target_width}x{target_height} is greater than max size {preresize_max_width}x{preresize_max_height}"
+
+    return image, mask, optional_context_mask
+
+def compute_target_size(width, height, target_resolution, aspect_ratio_limit=2):
+    ratio = max(1 / aspect_ratio_limit, min(width / height, aspect_ratio_limit))
+    height_new = target_resolution * 2 / (ratio + 1)
+    width_new = ratio * height_new
+    target_size = {
+            "target_height": int(round(height_new)),
+            "target_width": int(round(width_new)),
+        }
+
+    return target_size
+
+def calculate_target_size(mask, target_resolution, aspect_ratio_limit=2):
+    B, H, W = mask.shape
+    mask = mask.round()
+
+    for b in range(B):
+        rows = torch.any(mask[min(b, mask.shape[0]-1)] > 0, dim=1)
+        cols = torch.any(mask[min(b, mask.shape[0]-1)] > 0, dim=0)
+
+        row_indices = torch.where(rows)[0]
+        col_indices = torch.where(cols)[0]
+
+        if row_indices.numel() == 0 or col_indices.numel() == 0:
+            width, height = W, H
+        else:
+            y_min, y_max = row_indices[[0, -1]]
+            x_min, x_max = col_indices[[0, -1]]
+            width = (x_max - x_min + 1).item()
+            height = (y_max - y_min + 1).item()
+
+        return compute_target_size(width, height, target_resolution, aspect_ratio_limit)
+
+class CalculateTargetSizeByMask:
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "image": ("IMAGE", ),
+                "mask": ("MASK", ),
+                "target_size": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
+                "aspect_ratio_limit": ("FLOAT", {"default": 2, "min": 0, "max": 100, "step": 0.01}),
+            },
+        }
+
+    RETURN_TYPES = ("INT", "INT",)
+    RETURN_NAMES = ("height", "width",)
+    FUNCTION = "calculate_target_size"
+    CATEGORY = "LevelPixel/Image"
+    def calculate_target_size(self, image, mask, target_size=1024, aspect_ratio_limit=2):
+        target_size = calculate_target_size(image, mask, target_size, aspect_ratio_limit)
+        target_height, target_width = (target_size["target_height"], target_size["target_width"])
+        
+        return (target_height, target_width, )
 
 class FastCheckerPattern:
 
@@ -117,10 +270,6 @@ class FastCheckerPattern:
         image_out = pil2tensor(img.convert("RGB"))
 
         return (image_out,)
-        
-
-def tensor2pil(image):
-    return Image.fromarray(np.clip(255. * image.cpu().numpy().squeeze(), 0, 255).astype(np.uint8))
 
 class ImageOverlay:
 
@@ -331,14 +480,50 @@ class ResizeImageToTargetSize:
         
         return (pil2tensor(img),)
 
+class ResizeImageAndMasks:        
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+                "downscale_algorithm": (["nearest", "bilinear", "bicubic", "lanczos", "box", "hamming"], {"default": "lanczos"}),
+                "upscale_algorithm": (["nearest", "bilinear", "bicubic", "lanczos", "box", "hamming"], {"default": "lanczos"}),
+                "preresize_mode": (["ensure minimum resolution", "ensure maximum resolution", "ensure minimum and maximum resolution"], {"default": "ensure minimum resolution"}),
+                "preresize_min_width": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
+                "preresize_min_height": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
+                "preresize_max_width": ("INT", {"default": nodes.MAX_RESOLUTION, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
+                "preresize_max_height": ("INT", {"default": nodes.MAX_RESOLUTION, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
+           },
+           "optional": {
+                "mask": ("MASK",),
+                "optional_context_mask": ("MASK",),
+           }
+        }
+
+    FUNCTION = "resize_image_and_masks"
+    CATEGORY = "LevelPixel/Image"
+    DESCRIPTION = "Crops an image around a mask for inpainting, the optional context mask defines an extra area to keep for the context."
+
+    RETURN_TYPES = ("IMAGE", "MASK", "MASK")
+    RETURN_NAMES = ("image", "mask", "optional_context_mask")
+
+    def resize_image_and_masks(self, image, downscale_algorithm, upscale_algorithm, preresize_mode, preresize_min_width, preresize_min_height, preresize_max_width, preresize_max_height, mask=None, optional_context_mask=None):
+        image, mask, optional_context_mask = preresize_imm(image, mask, optional_context_mask, downscale_algorithm, upscale_algorithm, preresize_mode, preresize_min_width, preresize_min_height, preresize_max_width, preresize_max_height)
+
+        return (image, mask, optional_context_mask)
+
 NODE_CLASS_MAPPINGS = {
     "ImageOverlay|LP": ImageOverlay,
     "FastCheckerPattern|LP": FastCheckerPattern,
-    "ResizeImageToTargetSize|LP": ResizeImageToTargetSize
+    "ResizeImageToTargetSize|LP": ResizeImageToTargetSize,
+    "CalculateTargetSizeByMask|LP": CalculateTargetSizeByMask,
+    "ResizeImageAndMasks|LP": ResizeImageAndMasks
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "ImageOverlay|LP": "Image Overlay [LP]",
     "FastCheckerPattern|LP": "Fast Checker Pattern [LP]",
-    "ResizeImageToTargetSize|LP": "Resize Image To Target Size [LP]"
+    "ResizeImageToTargetSize|LP": "Resize Image To Target Size [LP]",
+    "CalculateTargetSizeByMask|LP": "Calculate Target Size By Mask [LP]",
+    "ResizeImageAndMasks|LP": "Resize Image and Masks [LP]"
 }
