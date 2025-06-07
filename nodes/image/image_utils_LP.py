@@ -518,7 +518,24 @@ class ResizeImageAndMasks:
         result_image = []
         result_mask = []
         result_optional_context_mask = []
-        batch_size = image.shape[0]
+        
+        if image is not None:
+            batch_size_image = image.shape[0]
+        else:
+            batch_size_image = 0
+            
+        if mask is not None:
+            batch_size_mask = mask.shape[0]
+        else:
+            batch_size_mask = 0
+
+        if optional_context_mask is not None:
+            batch_size_optional_context_mask = optional_context_mask.shape[0]
+        else:
+            batch_size_optional_context_mask = 0
+
+        batch_size = max(batch_size_image, batch_size_mask, batch_size_optional_context_mask)
+
         for b in range(batch_size):
             if image is not None:
                 if b >= len(image) or image[b] is None or image[b].numel() == 0:
@@ -545,13 +562,23 @@ class ResizeImageAndMasks:
                 one_optional_context_mask = None
 
             new_image, new_mask, new_optional_context_mask = preresize_imm(downscale_algorithm, upscale_algorithm, preresize_mode, preresize_min_width, preresize_min_height, preresize_max_width, preresize_max_height, one_image, one_mask, one_optional_context_mask)
-            result_image.append(new_image)
-            result_mask.append(new_mask)
-            result_optional_context_mask.append(new_optional_context_mask)
+            if new_image is not None: 
+                new_image = new_image.clone().squeeze(0)
+                result_image.append(new_image)
+            if new_mask is not None: 
+                new_mask = new_mask.clone().squeeze(0)
+                result_mask.append(new_mask)
+            if new_optional_context_mask is not None: 
+                new_optional_context_mask = new_optional_context_mask.clone().squeeze(0)
+                result_optional_context_mask.append(new_optional_context_mask)
 
-        result_image = torch.stack(result_image, dim=0)
-        result_mask = torch.stack(result_mask, dim=0)
-        result_optional_context_mask = torch.stack(result_optional_context_mask, dim=0)
+        filtered_result_image = [x for x in result_image if x is not None]
+        filtered_result_mask = [x for x in result_mask if x is not None]
+        filtered_result_optional_context_mask = [x for x in result_optional_context_mask if x is not None]
+
+        result_image = torch.stack(filtered_result_image, dim=0) if len(filtered_result_image) > 0 else torch.empty(0)
+        result_mask = torch.stack(filtered_result_mask, dim=0) if len(filtered_result_mask) > 0 else torch.empty(0)
+        result_optional_context_mask = torch.stack(filtered_result_optional_context_mask, dim=0) if len(filtered_result_optional_context_mask) > 0 else torch.empty(0)
        
         return (result_image, result_mask, result_optional_context_mask)
 
