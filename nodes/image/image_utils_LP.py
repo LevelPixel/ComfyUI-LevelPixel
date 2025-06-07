@@ -76,7 +76,7 @@ def rescale_m(samples, width, height, algorithm: str):
     return samples
 
 
-def preresize_imm(image, mask, optional_context_mask, downscale_algorithm, upscale_algorithm, preresize_mode, preresize_min_width, preresize_min_height, preresize_max_width, preresize_max_height):
+def preresize_imm(downscale_algorithm, upscale_algorithm, preresize_mode, preresize_min_width, preresize_min_height, preresize_max_width, preresize_max_height, image=None, mask=None, optional_context_mask=None):
     current_width, current_height = image.shape[2], image.shape[1]  # Image size [batch, height, width, channels]
     
     if preresize_mode == "ensure minimum resolution":
@@ -91,9 +91,9 @@ def preresize_imm(image, mask, optional_context_mask, downscale_algorithm, upsca
         target_width = int(current_width * scale_factor)
         target_height = int(current_height * scale_factor)
 
-        image = rescale_i(image, target_width, target_height, upscale_algorithm)
-        mask = rescale_m(mask, target_width, target_height, 'bilinear')
-        optional_context_mask = rescale_m(optional_context_mask, target_width, target_height, 'bilinear')
+        if image is not None: image = rescale_i(image, target_width, target_height, upscale_algorithm)
+        if mask is not None: mask = rescale_m(mask, target_width, target_height, 'bilinear')
+        if optional_context_mask is not None: optional_context_mask = rescale_m(optional_context_mask, target_width, target_height, 'bilinear')
         
         assert target_width >= preresize_min_width and target_height >= preresize_min_height, \
             f"Internal error: After resizing, target size {target_width}x{target_height} is smaller than min size {preresize_min_width}x{preresize_min_height}"
@@ -123,9 +123,9 @@ def preresize_imm(image, mask, optional_context_mask, downscale_algorithm, upsca
         target_width = int(current_width * scale_factor)
         target_height = int(current_height * scale_factor)
 
-        image = rescale_i(image, target_width, target_height, rescale_algorithm)
-        mask = rescale_m(mask, target_width, target_height, 'nearest') # Always nearest for efficiency
-        optional_context_mask = rescale_m(optional_context_mask, target_width, target_height, 'nearest') # Always nearest for efficiency
+        if image is not None: image = rescale_i(image, target_width, target_height, rescale_algorithm)
+        if mask is not None: mask = rescale_m(mask, target_width, target_height, 'nearest') # Always nearest for efficiency
+        if optional_context_mask is not None: optional_context_mask = rescale_m(optional_context_mask, target_width, target_height, 'nearest') # Always nearest for efficiency
         
         assert preresize_min_width <= target_width <= preresize_max_width, \
             f"Internal error: Target width {target_width} is outside the range {preresize_min_width} - {preresize_max_width}"
@@ -143,9 +143,9 @@ def preresize_imm(image, mask, optional_context_mask, downscale_algorithm, upsca
         target_width = int(current_width * scale_factor_max)
         target_height = int(current_height * scale_factor_max)
 
-        image = rescale_i(image, target_width, target_height, downscale_algorithm)
-        mask = rescale_m(mask, target_width, target_height, 'nearest')  # Always nearest for efficiency
-        optional_context_mask = rescale_m(optional_context_mask, target_width, target_height, 'nearest')  # Always nearest for efficiency
+        if image is not None: image = rescale_i(image, target_width, target_height, downscale_algorithm)
+        if mask is not None: mask = rescale_m(mask, target_width, target_height, 'nearest')  # Always nearest for efficiency
+        if optional_context_mask is not None: optional_context_mask = rescale_m(optional_context_mask, target_width, target_height, 'nearest')  # Always nearest for efficiency
 
         assert target_width <= preresize_max_width and target_height <= preresize_max_height, \
             f"Internal error: Target size {target_width}x{target_height} is greater than max size {preresize_max_width}x{preresize_max_height}"
@@ -485,7 +485,6 @@ class ResizeImageAndMasks:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "image": ("IMAGE",),
                 "downscale_algorithm": (["nearest", "bilinear", "bicubic", "lanczos", "box", "hamming"], {"default": "lanczos"}),
                 "upscale_algorithm": (["nearest", "bilinear", "bicubic", "lanczos", "box", "hamming"], {"default": "lanczos"}),
                 "preresize_mode": (["ensure minimum resolution", "ensure maximum resolution", "ensure minimum and maximum resolution"], {"default": "ensure minimum resolution"}),
@@ -495,6 +494,7 @@ class ResizeImageAndMasks:
                 "preresize_max_height": ("INT", {"default": nodes.MAX_RESOLUTION, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
            },
            "optional": {
+                "image": ("IMAGE",),
                 "mask": ("MASK",),
                 "optional_context_mask": ("MASK",),
            }
@@ -507,8 +507,8 @@ class ResizeImageAndMasks:
     RETURN_TYPES = ("IMAGE", "MASK", "MASK")
     RETURN_NAMES = ("image", "mask", "optional_context_mask")
 
-    def resize_image_and_masks(self, image, downscale_algorithm, upscale_algorithm, preresize_mode, preresize_min_width, preresize_min_height, preresize_max_width, preresize_max_height, mask=None, optional_context_mask=None):
-        image, mask, optional_context_mask = preresize_imm(image, mask, optional_context_mask, downscale_algorithm, upscale_algorithm, preresize_mode, preresize_min_width, preresize_min_height, preresize_max_width, preresize_max_height)
+    def resize_image_and_masks(self, downscale_algorithm, upscale_algorithm, preresize_mode, preresize_min_width, preresize_min_height, preresize_max_width, preresize_max_height, image=None, mask=None, optional_context_mask=None):
+        image, mask, optional_context_mask = preresize_imm(downscale_algorithm, upscale_algorithm, preresize_mode, preresize_min_width, preresize_min_height, preresize_max_width, preresize_max_height, image, mask, optional_context_mask,)
 
         return (image, mask, optional_context_mask)
 

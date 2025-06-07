@@ -36,11 +36,38 @@ function inpaintCropStitchHandler(node) {
     return;
 }
 
+function resizeImageAndMasksHandler(node) {
+    if (node.comfyClass == "ResizeImageAndMasks|LP") {
+        toggleWidget(node, findWidgetByName(node, "preresize_min_width"));
+        toggleWidget(node, findWidgetByName(node, "preresize_min_height"));
+        toggleWidget(node, findWidgetByName(node, "preresize_max_width"));
+        toggleWidget(node, findWidgetByName(node, "preresize_max_height"));
+        if (findWidgetByName(node, "preresize_mode").value == "ensure minimum resolution") {
+            toggleWidget(node, findWidgetByName(node, "preresize_min_width"), true);
+            toggleWidget(node, findWidgetByName(node, "preresize_min_height"), true);
+            toggleWidget(node, findWidgetByName(node, "preresize_max_width"), false);
+            toggleWidget(node, findWidgetByName(node, "preresize_max_height"), false);
+        }
+        else if (findWidgetByName(node, "preresize_mode").value == "ensure minimum and maximum resolution") {
+            toggleWidget(node, findWidgetByName(node, "preresize_min_width"), true);
+            toggleWidget(node, findWidgetByName(node, "preresize_min_height"), true);
+            toggleWidget(node, findWidgetByName(node, "preresize_max_width"), true);
+            toggleWidget(node, findWidgetByName(node, "preresize_max_height"), true);
+        }
+        else if (findWidgetByName(node, "preresize_mode").value == "ensure maximum resolution") {
+            toggleWidget(node, findWidgetByName(node, "preresize_min_width"), false);
+            toggleWidget(node, findWidgetByName(node, "preresize_min_height"), false);
+            toggleWidget(node, findWidgetByName(node, "preresize_max_width"), true);
+            toggleWidget(node, findWidgetByName(node, "preresize_max_height"), true);
+        }
+    }
+    return;
+}
+
 const findWidgetByName = (node, name) => {
     return node.widgets ? node.widgets.find((w) => w.name === name) : null;
 };
 
-// Toggle Widget + change size
 function toggleWidget(node, widget, show = false, suffix = "") {
     if (!widget) return;
     widget.disabled = !show
@@ -50,15 +77,14 @@ function toggleWidget(node, widget, show = false, suffix = "") {
 app.registerExtension({
     name: "levelpixel.showcontrol",
     nodeCreated(node) {
-        if (!node.comfyClass.startsWith("Inpaint")) {
+        if (!node.comfyClass.startsWith("Inpaint") && !node.comfyClass.startsWith("ResizeImageAndMasks")) {
             return;
         }
 
         inpaintCropStitchHandler(node);
+        resizeImageAndMasksHandler(node);
         for (const w of node.widgets || []) {
             let widgetValue = w.value;
-
-            // Store the original descriptor if it exists 
             let originalDescriptor = Object.getOwnPropertyDescriptor(w, 'value') || 
                 Object.getOwnPropertyDescriptor(Object.getPrototypeOf(w), 'value');
             if (!originalDescriptor) {
@@ -67,7 +93,6 @@ app.registerExtension({
 
             Object.defineProperty(w, 'value', {
                 get() {
-                    // If there's an original getter, use it. Otherwise, return widgetValue.
                     let valueToReturn = originalDescriptor && originalDescriptor.get
                         ? originalDescriptor.get.call(w)
                         : widgetValue;
@@ -75,7 +100,6 @@ app.registerExtension({
                     return valueToReturn;
                 },
                 set(newVal) {
-                    // If there's an original setter, use it. Otherwise, set widgetValue.
                     if (originalDescriptor && originalDescriptor.set) {
                         originalDescriptor.set.call(w, newVal);
                     } else { 
@@ -83,6 +107,7 @@ app.registerExtension({
                     }
 
                     inpaintCropStitchHandler(node);
+                    resizeImageAndMasksHandler(node);
                 }
             });
         }
