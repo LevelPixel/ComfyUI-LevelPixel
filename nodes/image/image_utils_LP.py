@@ -548,6 +548,10 @@ class ResizeImageAndMasks:
             result_image.append(new_image)
             result_mask.append(new_mask)
             result_optional_context_mask.append(new_optional_context_mask)
+
+        result_image = torch.stack(result_image, dim=0)
+        result_mask = torch.stack(result_mask, dim=0)
+        result_optional_context_mask = torch.stack(result_optional_context_mask, dim=0)
        
         return (result_image, result_mask, result_optional_context_mask)
 
