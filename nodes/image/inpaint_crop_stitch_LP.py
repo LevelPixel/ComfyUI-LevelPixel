@@ -547,9 +547,6 @@ class InpaintCrop:
 
         output_padding = int(output_padding)
 
-        print("target_width: ", target_width)
-        print("target_height: ", target_height)
-
         if image.shape[0] > 1:
             assert batch_mode, "for batch of images use Inpaint Crop only with Cropped Forsed Size Parameters node or with Forsed mode, given all images in the batch output have to be the same size"
 
@@ -832,7 +829,7 @@ class CroppedAspectSizeParameters:
         }
 
     RETURN_TYPES = ("CROPPEDSIZEDATA",)
-    RETURN_NAMES = ("target_size",)
+    RETURN_NAMES = ("cropped_size_parameters",)
     FUNCTION = "cropped_aspect_size_parameters"
     CATEGORY = "LevelPixel/Inpaint"
     def cropped_aspect_size_parameters(self, mask, target_size=1024, aspect_ratio_limit=2, optional_context_mask=None):
@@ -840,10 +837,10 @@ class CroppedAspectSizeParameters:
             assert optional_context_mask.shape[1:] == mask.shape[1:3], f"optional_context_mask dimensions do not match mask dimensions. Expected {mask.shape[1:3]}, got {optional_context_mask.shape[1:]}"
             context_mask = optional_context_mask.squeeze(-1)
             mask = ((mask > 0) | (context_mask > 0)).float()        
-        target_size = calculate_target_size(mask, target_size, aspect_ratio_limit)
-        target_size["batch_mode"] = False
+        cropped_size_parameters = calculate_target_size(mask, target_size, aspect_ratio_limit)
+        cropped_size_parameters["batch_mode"] = False
 
-        return (target_size, )
+        return (cropped_size_parameters, )
 
 
 class CroppedForsedSizeParameters:
@@ -852,24 +849,24 @@ class CroppedForsedSizeParameters:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "cropped_height": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
                 "cropped_width": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
+                "cropped_height": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),                
             },
         }
 
     RETURN_TYPES = ("CROPPEDSIZEDATA",)
-    RETURN_NAMES = ("target_size",)
+    RETURN_NAMES = ("cropped_size_parameters",)
     FUNCTION = "cropped_forsed_size_parameters"
     CATEGORY = "LevelPixel/Inpaint"
     def cropped_forsed_size_parameters(self, cropped_height, cropped_width):        
         target_height = cropped_height
         target_width = cropped_width
-        target_size = {            
+        cropped_size_parameters = {            
             "target_height": target_height,
             "target_width": target_width,
             "batch_mode": True
         }
-        return (target_size, )
+        return (cropped_size_parameters, )
 
 
 class CroppedRangedSizeParameters:
@@ -890,7 +887,7 @@ class CroppedRangedSizeParameters:
         }
 
     RETURN_TYPES = ("CROPPEDSIZEDATA",)
-    RETURN_NAMES = ("target_size",)
+    RETURN_NAMES = ("cropped_size_parameters",)
     FUNCTION = "cropped_ranged_size_parameters"
     CATEGORY = "LevelPixel/Inpaint"
     def cropped_ranged_size_parameters(self, mask, min_width, min_height, max_width, max_height, optional_context_mask=None):
@@ -919,12 +916,12 @@ class CroppedRangedSizeParameters:
         new_width = int(mask_width * scale_w)
         new_height = int(mask_height * scale_h)
 
-        target_size = {            
+        cropped_size_parameters = {            
             "target_height": new_height,
             "target_width": new_width,
             "batch_mode": False
         }
-        return (target_size, )
+        return (cropped_size_parameters, )
 
 
 class CroppedFreeSizeParameters:
@@ -934,7 +931,7 @@ class CroppedFreeSizeParameters:
         return {
             "required": {
                 "mask": ("MASK", ),
-                "rescale_factor": ("FLOAT", {"default": 1.00, "min": 0.01, "max": 100.0, "step": 0.01})
+                "rescale_factor": ("FLOAT", {"default": 2.00, "min": 0.01, "max": 100.0, "step": 0.01})
             },
             "optional": {
                 "optional_context_mask": ("MASK", ),
@@ -942,28 +939,24 @@ class CroppedFreeSizeParameters:
         }
 
     RETURN_TYPES = ("CROPPEDSIZEDATA",)
-    RETURN_NAMES = ("target_size",)
+    RETURN_NAMES = ("cropped_size_parameters",)
     FUNCTION = "cropped_free_size_parameters"
     CATEGORY = "LevelPixel/Inpaint"
     def cropped_free_size_parameters(self, mask, rescale_factor, optional_context_mask=None):
-
-        print("mask shape: ", mask.shape)
         if optional_context_mask is not None:
-            print("optional_context_mask shape: ", optional_context_mask.shape)
             assert optional_context_mask.shape[1:] == mask.shape[1:3], f"optional_context_mask dimensions do not match mask dimensions. Expected {mask.shape[1:3]}, got {optional_context_mask.shape[1:]}"
             context_mask = optional_context_mask.squeeze(-1)
             mask = ((mask > 0) | (context_mask > 0)).float()  
 
-        print("new mask shape: ", mask.shape)
         height = int(mask.shape[1] * rescale_factor)
         width = int(mask.shape[2] * rescale_factor)
 
-        target_size = {            
+        cropped_size_parameters = {            
             "target_height": height,
             "target_width": width,
             "batch_mode": False
         }
-        return (target_size, )
+        return (cropped_size_parameters, )
 
 NODE_CLASS_MAPPINGS = {
     "InpaintCrop|LP": InpaintCrop,
