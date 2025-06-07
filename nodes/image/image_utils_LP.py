@@ -515,9 +515,32 @@ class ResizeImageAndMasks:
     RETURN_NAMES = ("image", "mask", "optional_context_mask")
 
     def resize_image_and_masks(self, downscale_algorithm, upscale_algorithm, preresize_mode, preresize_min_width, preresize_min_height, preresize_max_width, preresize_max_height, image=None, mask=None, optional_context_mask=None):
-        image, mask, optional_context_mask = preresize_imm(downscale_algorithm, upscale_algorithm, preresize_mode, preresize_min_width, preresize_min_height, preresize_max_width, preresize_max_height, image, mask, optional_context_mask,)
+        result_image = []
+        result_mask = []
+        result_optional_context_mask = []
+        batch_size = image.shape[0]
+        for b in range(batch_size):
+            if b >= len(image) or image[b] is None or image[b].numel() == 0:
+                one_image = None
+            else:
+                one_image = image[b].unsqueeze(0)
 
-        return (image, mask, optional_context_mask)
+            if b >= len(mask) or mask[b] is None or mask[b].numel() == 0:
+                one_mask = None
+            else:
+                one_mask = mask[b].unsqueeze(0)
+
+            if b >= len(optional_context_mask) or optional_context_mask[b] is None or optional_context_mask[b].numel() == 0:
+                one_optional_context_mask = None
+            else:
+                one_optional_context_mask = optional_context_mask[b].unsqueeze(0)
+                
+            new_image, new_mask, new_optional_context_mask = preresize_imm(downscale_algorithm, upscale_algorithm, preresize_mode, preresize_min_width, preresize_min_height, preresize_max_width, preresize_max_height, one_image, one_mask, one_optional_context_mask)
+            result_image.append(new_image)
+            result_mask.append(new_mask)
+            result_optional_context_mask.append(new_optional_context_mask)
+       
+        return (result_image, result_mask, result_optional_context_mask)
 
 NODE_CLASS_MAPPINGS = {
     "ImageOverlay|LP": ImageOverlay,
