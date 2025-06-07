@@ -77,7 +77,7 @@ function toggleWidget(node, widget, show = false, suffix = "") {
 app.registerExtension({
     name: "levelpixel.showcontrol",
     nodeCreated(node) {
-        if (!node.comfyClass.startsWith("Inpaint") && !node.comfyClass.startsWith("ResizeImageAndMasks")) {
+        if (!node.comfyClass.startsWith("Inpaint") || !node.comfyClass.startsWith("ResizeImageAndMasks")) {
             return;
         }
 

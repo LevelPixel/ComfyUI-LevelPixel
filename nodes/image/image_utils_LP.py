@@ -77,7 +77,14 @@ def rescale_m(samples, width, height, algorithm: str):
 
 
 def preresize_imm(downscale_algorithm, upscale_algorithm, preresize_mode, preresize_min_width, preresize_min_height, preresize_max_width, preresize_max_height, image=None, mask=None, optional_context_mask=None):
-    current_width, current_height = image.shape[2], image.shape[1]  # Image size [batch, height, width, channels]
+    if image is not None:
+        current_width, current_height = image.shape[2], image.shape[1]  # Image size [batch, height, width, channels]
+    elif mask is not None:
+        current_width, current_height = mask.shape[2], mask.shape[1]  # Mask size [batch, height, width, channels]
+    elif optional_context_mask is not None:
+        current_width, current_height = optional_context_mask.shape[2], optional_context_mask.shape[1]  # Optional context mask size [batch, height, width, channels]
+    else:
+        return image, mask, optional_context_mask
     
     if preresize_mode == "ensure minimum resolution":
         if current_width >= preresize_min_width and current_height >= preresize_min_height:
