@@ -1,28 +1,4 @@
-import os
-import pkg_resources
-import sys
-import subprocess
 import importlib
-
-def check_requirements_installed(requirements_path):
-    with open(requirements_path, 'r') as f:
-        requirements = [pkg_resources.Requirement.parse(line.strip()) for line in f if line.strip()]
-
-    installed_packages = {pkg.key: pkg for pkg in pkg_resources.working_set}
-    installed_packages_set = set(installed_packages.keys())
-    missing_packages = []
-    for requirement in requirements:
-        if requirement.key not in installed_packages_set or not installed_packages[requirement.key] in requirement:
-            missing_packages.append(str(requirement))
-
-    if missing_packages:
-        print(f"Missing or outdated packages: {', '.join(missing_packages)}")
-        print("Installing/Updating missing packages...")
-        subprocess.check_call([sys.executable, '-s', '-m', 'pip', 'install', *missing_packages])
-
-requirements_path  = os.path.join(os.path.dirname(os.path.realpath(__file__)), "requirements.txt")
-check_requirements_installed(requirements_path)
-
 from .install_init import init
 
 init()
