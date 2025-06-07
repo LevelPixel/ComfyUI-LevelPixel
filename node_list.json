@@ -57,5 +57,15 @@
     "Pipe [LP]":"Pipe",
     "Pipe In [LP]":"Pipe In",
     "Pipe Out [LP]":"Pipe Out",
-    "Count Objects [LP]":"Count Objects - counts the number of objects that were fed to the input (this can be a list or one single object). Accepts any type of input."
+    "Count Objects [LP]":"Count Objects - counts the number of objects that were fed to the input (this can be a list or one single object). Accepts any type of input.",
+    "Resize Image To Target Size [LP]":"Resize Image To Target Size",
+    "Calculate Target Size By Mask [LP]":"Calculate Target Size By Mask",
+    "Resize Image and Masks [LP]":"Resize Image and Masks",
+    "Inpaint Crop [LP]":"Inpaint Crop by masks",
+    "Inpaint Stitch [LP]":"Inpaint Stitch",
+    "Extend Factor Parameters [LP]":"Extend Factor Parameters for Inpaint Crop",
+    "Cropped Aspect Size Parameters [LP]":"Cropped Aspect Size Parameters for Inpaint Crop",
+    "Cropped Forsed Size Parameters [LP]":"Cropped Forsed Size Parameters for Inpaint Crop",
+    "Cropped Ranged Size Parameters [LP]":"Cropped Ranged Size Parameters for Inpaint Crop",
+    "Cropped Free Size Parameters [LP]":"Cropped Free Size Parameter for Inpaint Crops"
 }
