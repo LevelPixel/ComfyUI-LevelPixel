@@ -197,7 +197,6 @@ class CalculateTargetSizeByMask:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "image": ("IMAGE", ),
                 "mask": ("MASK", ),
                 "target_size": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
                 "aspect_ratio_limit": ("FLOAT", {"default": 2, "min": 0, "max": 100, "step": 0.01}),
@@ -208,8 +207,8 @@ class CalculateTargetSizeByMask:
     RETURN_NAMES = ("height", "width",)
     FUNCTION = "calculate_target_size"
     CATEGORY = "LevelPixel/Image"
-    def calculate_target_size(self, image, mask, target_size=1024, aspect_ratio_limit=2):
-        target_size = calculate_target_size(image, mask, target_size, aspect_ratio_limit)
+    def calculate_target_size(self, mask, target_size=1024, aspect_ratio_limit=2):
+        target_size = calculate_target_size(mask, target_size, aspect_ratio_limit)
         target_height, target_width = (target_size["target_height"], target_size["target_width"])
         
         return (target_height, target_width, )
