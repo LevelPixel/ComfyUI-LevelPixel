@@ -7,6 +7,7 @@ node_list = [
     "convert.convert_LP",
     "image.image_utils_LP",
     "image.inpaint_crop_stitch_LP",
+    "io.iterators_LP",
     "io.folder_workers_LP",
     "io.image_loaders_LP",
     "io.image_outputs_LP",

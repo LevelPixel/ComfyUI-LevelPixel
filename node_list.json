@@ -11,6 +11,8 @@
     "Convert Int To Float [LP]":"Convert Int To Float",
     "Convert Int To Bool [LP]":"Convert Int To Bool",
     "Convert Bool To Int [LP]":"Convert Bool To Int",
+    "Convert Combo To Text [LP]":"Convert Combo To Text",
+    "Convert Any To Text [LP]":"Convert Any To Text",
     "Image Overlay [LP]":"Image Overlay",
     "Fast Checker Pattern [LP]":"Fast Checker Pattern",
     "File Counter [LP]":"Counts the number of files in the specified folder",
@@ -67,5 +69,12 @@
     "Cropped Aspect Size Parameters [LP]":"Cropped Aspect Size Parameters for Inpaint Crop",
     "Cropped Forsed Size Parameters [LP]":"Cropped Forsed Size Parameters for Inpaint Crop",
     "Cropped Ranged Size Parameters [LP]":"Cropped Ranged Size Parameters for Inpaint Crop",
-    "Cropped Free Size Parameters [LP]":"Cropped Free Size Parameter for Inpaint Crops"
+    "Cropped Free Size Parameters [LP]":"Cropped Free Size Parameter for Inpaint Crops",
+    "Get Iterator Data From Videos [LP]": "Get Iterator Data From Videos",
+    "Get Iterator Data From Image Folders [LP]": "Get Iterator Data From Image Folders",
+    "Image Data Iterator [LP]": "Image Data Iterator",
+    "Iterator [LP]": "Iterator",
+    "Get ComfyUI Folder Path [LP]": "Get ComfyUI Folder Path",
+    "Get ComfyUI HTTP Folder Path [LP]": "Get ComfyUI HTTP Folder Path",
+    "Get Filename By Index In Folder [LP]": "Get Filename By Index In Folder"
 }

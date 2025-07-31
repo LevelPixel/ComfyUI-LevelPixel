@@ -9,6 +9,7 @@ class FileCounter:
             "required": {
                 "directory_path": ("STRING", {"default": '', "multiline": False}),
                 "patterns": ("STRING", {"default": '*.jpg|*.png|*.jpeg', "multiline": False}),
+                "rescan_each_queue": ("BOOLEAN", {"default": True}),
             },
         }
 
@@ -20,10 +21,13 @@ class FileCounter:
     CATEGORY = "LevelPixel/IO"
 
     @classmethod
-    def IS_CHANGED(cls, *v):
-        return ALWAYS_CHANGED_FLAG
+    def IS_CHANGED(cls, directory_path, patterns, rescan_each_queue, *v):
+        if rescan_each_queue == True:
+            return float("NaN")
+        else:
+            return False
 
-    def file_counter(self, directory_path, patterns):
+    def file_counter(self, directory_path, patterns, rescan_each_queue):
         if not os.path.isdir(directory_path):
             return (0,)
         total_int = 0

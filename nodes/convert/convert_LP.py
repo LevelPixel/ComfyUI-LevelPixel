@@ -274,6 +274,67 @@ class BoolToInt:
 
         return (int_out,)
 
+class ComboToText:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "combo_list": ("COMBO",),
+                "delimiter": ("STRING", {"default": ", ", "multiline": False}),
+                "as_json": ("BOOLEAN", {"default": False}),
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("text",)
+    FUNCTION = "combo_to_text"
+    CATEGORY = "LevelPixel/Conversion"
+
+    def combo_to_text(self, combo_list, delimiter, as_json):
+        import json
+        if as_json:
+            try:
+                text = json.dumps(combo_list, ensure_ascii=False, indent=2)
+            except Exception as e:
+                text = f"Error: {e}"
+        else:
+            lines = []
+            for item in combo_list:
+                if isinstance(item, dict):
+                    line = delimiter.join(f"{k}: {v}" for k, v in item.items())
+                else:
+                    line = str(item)
+                lines.append(line)
+            text = "\n".join(lines)
+        return (text,)
+
+class AnyToText:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "any_value": (any, {"defaultInput": True}),
+                "as_json": ("BOOLEAN", {"default": False}),
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("text",)
+    FUNCTION = "any_to_text"
+    CATEGORY = "LevelPixel/Conversion"
+
+    def any_to_text(self, any_value, as_json):
+        import json
+        if as_json:
+            try:
+                text = json.dumps(any_value, ensure_ascii=False, indent=2)
+            except Exception as e:
+                text = f"Error: {e}"
+        else:
+            text = str(any_value)
+        return (text,)
+
+
 NODE_CLASS_MAPPINGS = {
     "StringToInt|LP": StringToInt,
     "StringToFloat|LP": StringToFloat,
@@ -287,6 +348,8 @@ NODE_CLASS_MAPPINGS = {
     "IntToFloat|LP": IntToFloat,
     "IntToBool|LP": IntToBool,
     "BoolToInt|LP": BoolToInt,
+    "ComboToText|LP": ComboToText,
+    "AnyToText|LP": AnyToText,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -302,4 +365,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "IntToFloat|LP": "Convert Int To Float [LP]",
     "IntToBool|LP": "Convert Int To Bool [LP]",
     "BoolToInt|LP": "Convert Bool To Int [LP]",
+    "ComboToText|LP": "Convert Combo To Text [LP]",
+    "AnyToText|LP": "Convert Any To Text [LP]",
 }
