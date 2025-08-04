@@ -125,8 +125,8 @@ class Iterator:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "index": ("INT", {"default": 0, "min": 0, "control_after_generate": True}),
-                "limit": ("INT", {"default": 0, "min": 0}),
+                "index": ("INT", {"default": 0, "min": 0, "max": 999999, "control_after_generate": True}),
+                "limit": ("INT", {"default": 0, "min": 0, "max": 999999}),
                 "mode": ([
                     "Greater (index > limit)",
                     "Less (index < limit)",
