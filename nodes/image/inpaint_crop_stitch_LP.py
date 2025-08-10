@@ -429,6 +429,34 @@ def stitch_magic_im(canvas_image, inpainted_image, mask, ctc_x, ctc_y, ctc_w, ct
 
     return output_image
 
+def crop_region(mask, square=False):
+    bbox = mask.getbbox()
+    if bbox is None:
+        return mask, (mask.size, (0, 0, 0, 0))
+
+    crop_x, crop_y, crop_x2, crop_y2 = bbox
+    crop_x = max(crop_x, 0)
+    crop_y = max(crop_y, 0)
+    crop_x2 = min(crop_x2, mask.width)
+    crop_y2 = min(crop_y2, mask.height)
+
+    if square:
+        bbox_width = crop_x2 - crop_x
+        bbox_height = crop_y2 - crop_y
+        side_length = max(bbox_width, bbox_height)
+        center_x = (crop_x + crop_x2) // 2
+        center_y = (crop_y + crop_y2) // 2
+        crop_x = center_x - side_length // 2
+        crop_y = center_y - side_length // 2
+        crop_x = max(crop_x, 0)
+        crop_y = max(crop_y, 0)
+        crop_x2 = min(crop_x + side_length, mask.width)
+        crop_y2 = min(crop_y + side_length, mask.height)
+
+    cropped_mask = mask.crop((crop_x, crop_y, crop_x2, crop_y2))
+    crop_data = (cropped_mask.size, (crop_x, crop_y, crop_x2, crop_y2))
+
+    return cropped_mask, crop_data
 
 class InpaintCrop:
     """
@@ -931,7 +959,8 @@ class CroppedFreeSizeParameters:
         return {
             "required": {
                 "mask": ("MASK", ),
-                "rescale_factor": ("FLOAT", {"default": 2.00, "min": 0.01, "max": 100.0, "step": 0.01})
+                "rescale_factor": ("FLOAT", {"default": 2.00, "min": 0.01, "max": 100.0, "step": 0.01}),
+                "cropping_form": (["free form", "square form"], {"default": "free form"})
             },
             "optional": {
                 "optional_context_mask": ("MASK", ),
@@ -942,14 +971,23 @@ class CroppedFreeSizeParameters:
     RETURN_NAMES = ("cropped_size_parameters",)
     FUNCTION = "cropped_free_size_parameters"
     CATEGORY = "LevelPixel/Inpaint"
-    def cropped_free_size_parameters(self, mask, rescale_factor, optional_context_mask=None):
+    def cropped_free_size_parameters(self, mask, rescale_factor, cropping_form, optional_context_mask=None):
         if optional_context_mask is not None:
             assert optional_context_mask.shape[1:] == mask.shape[1:3], f"optional_context_mask dimensions do not match mask dimensions. Expected {mask.shape[1:3]}, got {optional_context_mask.shape[1:]}"
-            context_mask = optional_context_mask.squeeze(-1)
-            mask = ((mask > 0) | (context_mask > 0)).float()  
+            combined_mask = ((mask > 0) | (optional_context_mask > 0)).float()
+        else:
+            combined_mask = mask
 
-        height = int(mask.shape[1] * rescale_factor)
-        width = int(mask.shape[2] * rescale_factor)
+        mask_np = combined_mask.cpu().numpy().squeeze()
+        mask_pil = Image.fromarray(np.clip(255. * mask_np, 0, 255).astype(np.uint8))
+
+        square = cropping_form == "square form"
+        region_mask, crop_data = crop_region(mask_pil, square=square)
+
+        (width, height), (left, top, right, bottom) = crop_data
+
+        height = int(height * rescale_factor)
+        width = int(width * rescale_factor)
 
         cropped_size_parameters = {            
             "target_height": height,
