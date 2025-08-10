@@ -850,6 +850,7 @@ class CroppedAspectSizeParameters:
                 "mask": ("MASK", ),
                 "target_size": ("INT", {"default": 1024, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),
                 "aspect_ratio_limit": ("FLOAT", {"default": 2, "min": 1, "max": 100, "step": 0.01}),
+                "crop_size_mode": (["auto", "no larger than mask", "no smaller than mask"], {"default": "auto", "tooltip": "How to constrain the crop size relative to the mask+context area."}),
             },
             "optional": {
                 "optional_context_mask": ("MASK", ),
@@ -860,14 +861,37 @@ class CroppedAspectSizeParameters:
     RETURN_NAMES = ("cropped_size_parameters",)
     FUNCTION = "cropped_aspect_size_parameters"
     CATEGORY = "LevelPixel/Inpaint"
-    def cropped_aspect_size_parameters(self, mask, target_size=1024, aspect_ratio_limit=2, optional_context_mask=None):
+    def cropped_aspect_size_parameters(self, mask, target_size=1024, aspect_ratio_limit=2, crop_size_mode="Auto", optional_context_mask=None):
         if optional_context_mask is not None:
             assert optional_context_mask.shape[1:] == mask.shape[1:3], f"optional_context_mask dimensions do not match mask dimensions. Expected {mask.shape[1:3]}, got {optional_context_mask.shape[1:]}"
             context_mask = optional_context_mask.squeeze(-1)
-            mask = ((mask > 0) | (context_mask > 0)).float()        
-        cropped_size_parameters = calculate_target_size(mask, target_size, aspect_ratio_limit)
-        cropped_size_parameters["batch_mode"] = False
+            combined_mask = ((mask > 0) | (context_mask > 0)).float()
+        else:
+            combined_mask = mask
+        cropped_size_parameters = calculate_target_size(combined_mask, target_size, aspect_ratio_limit)
+  
+        if optional_context_mask is not None:
+            assert optional_context_mask.shape[1:] == mask.shape[1:3], f"optional_context_mask dimensions do not match mask dimensions. Expected {mask.shape[1:3]}, got {optional_context_mask.shape[1:]}"
+            new_combined_mask = ((mask > 0) | (optional_context_mask > 0)).float()
+        else:
+            new_combined_mask = mask
 
+        mask_np = new_combined_mask.cpu().numpy().squeeze()
+        mask_pil = Image.fromarray(np.clip(255. * mask_np, 0, 255).astype(np.uint8))
+
+        region_mask, crop_data = crop_region(mask_pil, square=False)
+
+        (width, height), (left, top, right, bottom) = crop_data
+
+        if crop_size_mode == "no larger than mask":
+            if cropped_size_parameters["target_width"] > width and cropped_size_parameters["target_height"] > height:
+                cropped_size_parameters["target_width"] = width
+                cropped_size_parameters["target_height"] = height
+        elif crop_size_mode == "no smaller than mask":
+            if cropped_size_parameters["target_width"] < width and cropped_size_parameters["target_height"] < height:
+                cropped_size_parameters["target_width"] = width
+                cropped_size_parameters["target_height"] = height
+        cropped_size_parameters["batch_mode"] = False
         return (cropped_size_parameters, )
 
 
