@@ -101,7 +101,7 @@ The core functionality is taken from [comfyui_lora_tag_loader](https://github.co
 
 ### Model Unloader nodes
 
-A node that automatically unloads all checkpoints from memory. It must be added to a sequential chain of nodes in the workflow. There are three versions of this node: Hard (complete unloading of all checkpoints from memory, except for GGUF (not supported yet)), Middle (the same as Hard, but in the future I plan to add widgets with the ability to select a mode), Soft (without unloading checkpoints from memory, just soft cleaning of memory from garbage).
+A node that automatically unloads all models from memory. It must be added to a sequential chain of nodes in the workflow. There are three versions of this node: Hard (complete unloading of all models from memory), Soft (without unloading models from memory, just soft cleaning of memory from garbage), Model Unload (unloading of specifiy model from memory), and "Soft Full Clean RAM and VRAM" for the case when it is necessary to unload all models from memory and clean memory from garbage after the workflow is completed (the task in the queue is finished).
 
 ### File Counter
 
