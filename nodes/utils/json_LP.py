@@ -1,4 +1,5 @@
 import json
+import copy
 from typing import Tuple
 
 class ParseJSONString:
@@ -9,11 +10,12 @@ class ParseJSONString:
                 "json_string": ("STRING", {"multiline": True, "default": "{}"}),
             }
         }
-    
+
     RETURN_TYPES = ("JSON",)
     RETURN_NAMES = ("json_object",)
     FUNCTION = "parse"
     CATEGORY = "LevelPixel/JSON"
+
     def parse(self, json_string):
         try:
             data = json.loads(json_string)
@@ -21,8 +23,14 @@ class ParseJSONString:
             print("JSON Parse Error!")
             data = {}
         return (data,)
-        
+
 class ModifyJSONObject:
+    """
+      - "user.name"          → {"user": {"name": value}}
+      - "items[0].title"     → {"items": [{"title": value}]}
+      - "a.b[2].c"           
+    """
+
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -31,29 +39,110 @@ class ModifyJSONObject:
                 "value": ("STRING", {"default": "new_value"}),
             },
             "optional": {
-                "json_object": ("JSON",), 
+                "json_object": ("JSON",),
             }
         }
-    
-    RETURN_TYPES = ("JSON", "STRING") 
+
+    RETURN_TYPES = ("JSON", "STRING")
     RETURN_NAMES = ("json_object", "json_string")
     FUNCTION = "modify"
     CATEGORY = "LevelPixel/JSON"
+
     def modify(self, key, value, json_object=None):
         if json_object is not None:
-            data = json_object.copy()
+            data = copy.deepcopy(json_object)
         else:
             data = {}
-        
-        if value.isdigit():
-            value = int(value)
-        elif value.replace('.', '', 1).isdigit() and value.count('.') < 2:
-            value = float(value)
-            
-        data[key] = value
-        
-        return (data, json.dumps(data, indent=4))
-        
+
+        parsed_value = self._parse_value(value)
+
+        self._set_nested(data, key, parsed_value)
+
+        return (data, json.dumps(data, indent=4, ensure_ascii=False))
+
+    @staticmethod
+    def _parse_value(value: str):
+        stripped = value.strip()
+        if stripped.startswith(("{", "[")):
+            try:
+                return json.loads(stripped)
+            except json.JSONDecodeError:
+                pass
+
+        try:
+            return int(value)
+        except ValueError:
+            pass
+
+        try:
+            return float(value)
+        except ValueError:
+            pass
+
+        if value.lower() == "true":
+            return True
+        if value.lower() == "false":
+            return False
+        if value.lower() == "null":
+            return None
+
+        return value
+
+    @staticmethod
+    def _parse_path(key: str) -> list:
+        normalized = key.replace("[", ".").replace("]", "")
+        parts = [p for p in normalized.split(".") if p]
+
+        segments = []
+        for p in parts:
+            try:
+                segments.append(int(p))
+            except ValueError:
+                segments.append(p)
+        return segments
+
+    @staticmethod
+    def _set_nested(data, key: str, value):
+        """
+        Example for json value:
+          _set_nested({}, "a.b.c", 42)       → {"a": {"b": {"c": 42}}}
+          _set_nested({}, "items[0].name", "x") → {"items": [{"name": "x"}]}
+        """
+        segments = ModifyJSONObject._parse_path(key)
+        if not segments:
+            return
+
+        current = data
+
+        for i, seg in enumerate(segments[:-1]):
+            next_seg = segments[i + 1]
+            next_is_index = isinstance(next_seg, int)
+
+            if isinstance(seg, int):
+                while len(current) <= seg:
+                    current.append({} if not next_is_index else [])
+                if current[seg] is None or (next_is_index and not isinstance(current[seg], list)):
+                    current[seg] = [] if next_is_index else {}
+                elif not next_is_index and not isinstance(current[seg], dict):
+                    current[seg] = {}
+                current = current[seg]
+            else:
+                if seg not in current or current[seg] is None:
+                    current[seg] = [] if next_is_index else {}
+                elif next_is_index and not isinstance(current[seg], list):
+                    current[seg] = []
+                elif not next_is_index and not isinstance(current[seg], dict):
+                    current[seg] = {}
+                current = current[seg]
+
+        last = segments[-1]
+        if isinstance(last, int):
+            while len(current) <= last:
+                current.append(None)
+            current[last] = value
+        else:
+            current[last] = value
+
 class GetJSONValue:
     @classmethod
     def INPUT_TYPES(s):
@@ -63,19 +152,19 @@ class GetJSONValue:
                 "key": ("STRING", {"default": "my_key"}),
             }
         }
-    
+
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("string",)
     FUNCTION = "get_value"
     CATEGORY = "LevelPixel/JSON"
-    
+
     def get_value(self, json_object, key):
-        normalized_path = key.replace('[', '.').replace(']', '')
-        
-        parts = [p for p in normalized_path.split('.') if p]
-        
+        normalized_path = key.replace("[", ".").replace("]", "")
+
+        parts = [p for p in normalized_path.split(".") if p]
+
         curr = json_object
-        
+
         for part in parts:
             try:
                 if isinstance(curr, dict):
@@ -89,8 +178,12 @@ class GetJSONValue:
                 return ("",)
 
         val = "" if curr is None else curr
+
+        if isinstance(val, (dict, list)):
+            return (json.dumps(val, ensure_ascii=False),)
+
         return (str(val),)
-        
+
 class MergeJSONNode:
     @classmethod
     def INPUT_TYPES(cls):
@@ -107,25 +200,25 @@ class MergeJSONNode:
     FUNCTION = "merge_json"
     CATEGORY = "LevelPixel/JSON"
 
-    def merge_json(self, json_string_1: str, json_string_2: str, merge_strategy: str) -> tuple[str]:
+    def merge_json(self, json_string_1: str, json_string_2: str, merge_strategy: str) -> tuple:
         try:
             data1 = json.loads(json_string_1)
             data2 = json.loads(json_string_2)
-            
+
             if isinstance(data1, list) and isinstance(data2, list):
                 result = data1 + data2
             elif isinstance(data1, dict) and isinstance(data2, dict):
                 result = self._merge_dicts(data1, data2, merge_strategy)
             else:
                 raise ValueError("Both inputs must be of the same type (either objects or arrays)")
-                
-            return (json.dumps(result, indent=2),)
+
+            return (json.dumps(result, indent=2, ensure_ascii=False),)
         except json.JSONDecodeError:
             raise ValueError("Invalid JSON input")
 
     def _merge_dicts(self, dict1: dict, dict2: dict, strategy: str) -> dict:
         result = dict1.copy()
-        
+
         for key, value in dict2.items():
             if key not in result:
                 result[key] = value
@@ -134,14 +227,19 @@ class MergeJSONNode:
                     result[key] = value
                 elif strategy == "preserve":
                     continue
-                elif isinstance(result[key], dict) and isinstance(value, dict):
-                    result[key] = self._merge_dicts(result[key], value, strategy)
-                elif isinstance(result[key], list) and isinstance(value, list):
-                    result[key] = result[key] + value
-                    
-        return result 
+                elif strategy == "concat":
+                    if isinstance(result[key], list) and isinstance(value, list):
+                        result[key] = result[key] + value
+                    elif isinstance(result[key], str) and isinstance(value, str):
+                        result[key] = result[key] + value
+                    elif isinstance(result[key], dict) and isinstance(value, dict):
+                        result[key] = self._merge_dicts(result[key], value, strategy)
+                    else:
+                        result[key] = value
 
-class ConvertJsonToString:    
+        return result
+
+class ConvertJsonToString:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -161,7 +259,6 @@ class ConvertJsonToString:
             return (string_out,)
         except Exception as e:
             return (f"Error: {str(e)}",)
-
 
 class ConvertStringToJson:
     @classmethod
@@ -184,7 +281,7 @@ class ConvertStringToJson:
         except Exception as e:
             print(f"JSON Parse Error: {e}")
             return ({},)
-        
+
 class JSONLengthNode:
     @classmethod
     def INPUT_TYPES(cls):
@@ -199,7 +296,7 @@ class JSONLengthNode:
     FUNCTION = "get_length"
     CATEGORY = "LevelPixel/JSON"
 
-    def get_length(self, json_string: str) -> tuple[int]:
+    def get_length(self, json_string: str) -> tuple:
         try:
             data = json.loads(json_string)
             if isinstance(data, (list, dict)):
@@ -228,20 +325,20 @@ class JSONKeyCheckerNode:
             data = json.loads(json_string)
             if not isinstance(data, dict):
                 return (False, "")
-                
-            keys = key.split('.')
+
+            keys = key.split(".")
             current = data
-            
+
             for k in keys:
-                if k not in current:
+                if not isinstance(current, dict) or k not in current:
                     return (False, "")
                 current = current[k]
-                
+
             if isinstance(current, (dict, list)):
-                value = json.dumps(current)
+                value = json.dumps(current, ensure_ascii=False)
             else:
                 value = str(current)
-                
+
             return (True, value)
         except json.JSONDecodeError:
             raise ValueError("Invalid JSON input")
@@ -262,12 +359,12 @@ class JSONStringifierNode:
     FUNCTION = "stringify"
     CATEGORY = "LevelPixel/JSON"
 
-    def stringify(self, json_string: str, indent: int, sort_keys: bool) -> tuple[str]:
+    def stringify(self, json_string: str, indent: int, sort_keys: bool) -> tuple:
         try:
             data = json.loads(json_string)
-            return (json.dumps(data, indent=indent, sort_keys=sort_keys),)
+            return (json.dumps(data, indent=indent, sort_keys=sort_keys, ensure_ascii=False),)
         except json.JSONDecodeError:
-            raise ValueError("Invalid JSON input") 
+            raise ValueError("Invalid JSON input")
 
 NODE_CLASS_MAPPINGS = {
     "ParseJSONString|LP": ParseJSONString,
@@ -278,8 +375,9 @@ NODE_CLASS_MAPPINGS = {
     "ConvertStringToJson|LP": ConvertStringToJson,
     "JSONLengthNode|LP": JSONLengthNode,
     "JSONKeyCheckerNode|LP": JSONKeyCheckerNode,
-    "JSONStringifierNode|LP": JSONStringifierNode
+    "JSONStringifierNode|LP": JSONStringifierNode,
 }
+
 NODE_DISPLAY_NAME_MAPPINGS = {
     "ParseJSONString|LP": "Parse JSON String [LP]",
     "ModifyJSONObject|LP": "Modify JSON Object [LP]",
@@ -289,5 +387,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "ConvertStringToJson|LP": "Convert String to JSON [LP]",
     "JSONLengthNode|LP": "Get JSON Length [LP]",
     "JSONKeyCheckerNode|LP": "Check JSON Key [LP]",
-    "JSONStringifierNode|LP": "Stringify JSON [LP]"
+    "JSONStringifierNode|LP": "Stringify JSON [LP]",
 }
