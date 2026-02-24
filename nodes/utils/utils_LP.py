@@ -276,4 +276,3 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "Pipe|LP": "Pipe [LP]",
     "CountObjects|LP": "Count Objects [LP]"
 }
-

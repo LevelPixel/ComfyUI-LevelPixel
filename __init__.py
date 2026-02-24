@@ -4,6 +4,7 @@ from .install_init import init
 init()
 
 node_list = [
+    "api.qwen_api_LP",
     "convert.convert_LP",
     "image.image_utils_LP",
     "image.inpaint_crop_stitch_LP",
@@ -19,6 +20,7 @@ node_list = [
     "text.text_utils_LP",
     "unloaders.model_unloaders_LP",
     "unloaders.override_device_LP",
+    "utils.json_LP",
     "utils.utils_LP",
 ]
 

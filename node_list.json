@@ -78,5 +78,15 @@
     "Iterator [LP]": "Iterator",
     "Get ComfyUI Folder Path [LP]": "Get ComfyUI Folder Path",
     "Get ComfyUI HTTP Folder Path [LP]": "Get ComfyUI HTTP Folder Path",
-    "Get Filename By Index In Folder [LP]": "Get Filename By Index In Folder"
+    "Get Filename By Index In Folder [LP]": "Get Filename By Index In Folder",
+    "Qwen Image Edit (API) [LP]": "Generate new image using Qwen Image Edit API",
+    "Parse JSON String [LP]": "Parse JSON String",
+    "Modify JSON Object [LP]": "Modify JSON Object",
+    "Get JSON Value [LP]": "Get JSON Value",
+    "Merge JSON Node [LP]": "Merge JSON Node",
+    "Convert JSON to String [LP]": "Convert JSON to String",
+    "Convert String to JSON [LP]": "Convert String to JSON",
+    "Get JSON Length [LP]": "Get JSON Length",
+    "Check JSON Key [LP]": "Check JSON Key",
+    "Stringify JSON [LP]": "Stringify JSON"
 }

@@ -4,3 +4,5 @@ matplotlib
 langdetect
 deep_translator>=1.11.4
 wordninja
+requests>=2.28.0
+python-dotenv>=1.0.0
